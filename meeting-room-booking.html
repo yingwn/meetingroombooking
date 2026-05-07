@@ -1,0 +1,3501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>应急通信局会议预约系统</title>
+<style>
+/* ===== Reset & Variables ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pri:#2563eb;--pri-l:#eff6ff;--pri-d:#1d4ed8;--pri-ll:#dbeafe;
+  --ok:#16a34a;--ok-l:#f0fdf4;--warn:#f59e0b;--warn-l:#fffbeb;--err:#dc2626;--err-l:#fef2f2;
+  --bg:#f1f5f9;--bg2:#e2e8f0;--card:#fff;--bd:#e2e8f0;--bd2:#cbd5e1;
+  --tx:#0f172a;--tx2:#475569;--tx3:#94a3b8;
+  --sh:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+  --sh2:0 4px 16px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.04);
+  --sh3:0 10px 30px rgba(15,23,42,.1),0 4px 10px rgba(15,23,42,.05);
+  --r:14px;--rs:10px;--tr:all .2s cubic-bezier(.4,0,.2,1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
+
+/* ===== Navbar ===== */
+.nav{height:60px;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 50%,#1e40af 100%);
+  background-size:200% 100%;animation:navShine 8s ease infinite;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:200;
+  box-shadow:0 1px 3px rgba(0,0,0,.1),0 4px 20px rgba(30,64,175,.2);
+  backdrop-filter:blur(8px)}
+@keyframes navShine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.nav-brand{display:flex;align-items:center;gap:10px;color:#fff;font-size:17px;font-weight:700;letter-spacing:.3px}
+.nav-logo{width:34px;height:34px;border-radius:8px;object-fit:contain;flex-shrink:0;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.95);font-size:13px;font-weight:500}
+.nav-avatar{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  border:2px solid rgba(255,255,255,.35);cursor:pointer;transition:var(--tr);
+  backdrop-filter:blur(4px)}
+.nav-avatar:hover{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.5)}
+.nav-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;
+  cursor:pointer;transition:var(--tr);backdrop-filter:blur(4px);white-space:nowrap}
+.nav-btn:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.35)}
+
+/* ===== Tab Bar ===== */
+.tab-bar{background:#fff;border-bottom:1px solid var(--bd);display:flex;align-items:stretch;
+  padding:0 24px;position:sticky;top:60px;z-index:190;gap:0;overflow-x:auto;
+  box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.tab-item{display:flex;align-items:center;gap:6px;padding:14px 20px;font-size:13px;font-weight:500;
+  color:var(--tx2);cursor:pointer;border-bottom:2.5px solid transparent;
+  transition:var(--tr);white-space:nowrap;user-select:none;position:relative}
+.tab-item::after{content:'';position:absolute;bottom:0;left:50%;width:0;height:2.5px;
+  background:var(--pri);border-radius:2px;transition:var(--tr);transform:translateX(-50%)}
+.tab-item:hover{color:var(--pri);background:var(--pri-l)}
+.tab-item.active{color:var(--pri);font-weight:600}
+.tab-item.active::after{width:24px}
+.tab-item .tab-ic{font-size:15px}
+.tab-item .tab-badge{background:var(--err);color:#fff;font-size:10px;padding:0 5px;border-radius:8px;
+  min-width:16px;text-align:center;line-height:16px;animation:badgePop .3s ease}
+@keyframes badgePop{from{transform:scale(0)}to{transform:scale(1)}}
+.tab-item.admin-tab{margin-left:auto;color:var(--warn)}
+.tab-item.admin-tab:hover{color:var(--err);background:var(--err-l)}
+.tab-item.admin-tab.active{color:var(--err)}
+.tab-item.admin-tab.active::after{background:var(--err)}
+
+/* ===== Pages ===== */
+.page{display:none;flex:1;padding:16px 20px}
+.page.active{display:block;animation:pageIn .3s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== Dashboard ===== */
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.dash-card{background:var(--card);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);
+  display:flex;align-items:center;gap:14px;transition:var(--tr);border:1px solid var(--bd)}
+.dash-card:hover{box-shadow:var(--sh2);transform:translateY(-2px);border-color:var(--bd2)}
+.dc-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:24px;flex-shrink:0}
+.dc-info{flex:1}
+.dc-val{font-size:28px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.dc-label{font-size:12px;color:var(--tx2);margin-top:3px;font-weight:500}
+
+.dash-sections{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-sec{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--bd)}
+.dash-sec-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+  border-bottom:1px solid var(--bd);background:linear-gradient(180deg,#fafbfc 0%,#fff 100%)}
+.dash-sec-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.dash-sec-more{font-size:12px;color:var(--pri);cursor:pointer;border:none;background:none;
+  font-weight:600;padding:4px 10px;border-radius:6px;transition:var(--tr)}
+.dash-sec-more:hover{background:var(--pri-l)}
+.dash-sec-body{padding:14px 18px}
+
+/* Quick room status */
+.qroom-list{display:flex;flex-direction:column;gap:6px}
+.qroom-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);
+  background:var(--bg);transition:var(--tr);border:1px solid transparent}
+.qroom-row:hover{background:var(--pri-l);border-color:var(--pri-ll)}
+.qroom-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px rgba(0,0,0,.06)}
+.qroom-info{flex:1;min-width:0}
+.qroom-name{font-size:13px;font-weight:600;white-space:normal;word-break:break-all;line-height:1.3}
+.qroom-meta{font-size:11px;color:var(--tx2);font-weight:500;margin-top:2px;white-space:normal;word-break:break-all;line-height:1.3}
+.qroom-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:.2px}
+.qroom-status.free{background:var(--ok-l);color:var(--ok)}
+.qroom-status.busy{background:var(--err-l);color:var(--err)}
+.qroom-status.maint{background:var(--warn-l);color:#b45309}
+
+/* Quick upcoming */
+.qbk-list{display:flex;flex-direction:column;gap:6px}
+.qbk-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--rs);
+  background:var(--bg);transition:var(--tr);cursor:pointer;border:1px solid transparent}
+.qbk-row:hover{background:var(--pri-l);border-color:var(--pri-ll)}
+.qbk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.qbk-info{flex:1;min-width:0}
+.qbk-top{display:flex;align-items:center;gap:6px}
+.qbk-rn{font-size:13px;font-weight:600}
+.qbk-time{font-size:11px;color:var(--tx2);font-weight:500}
+.qbk-sub{font-size:11px;color:var(--tx2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Mini gantt on dashboard */
+.dash-gantt{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.dash-gantt-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+  border-bottom:1px solid var(--bd)}
+
+/* ===== Dashboard Timeline ===== */
+.dash-timeline{padding:14px 18px 18px;overflow-x:auto}
+.dash-tl-grid-wrap{display:grid;grid-template-columns:110px 1fr}
+.dash-tl-corner{font-size:10px;color:var(--tx2);padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd)}
+.dash-tl-header{display:flex;border-bottom:2px solid var(--bd2);position:relative}
+.dash-tl-hour{flex:1;min-width:40px;font-size:10px;color:var(--tx2);text-align:center;
+  padding:5px 0 7px;position:relative;font-weight:500}
+.dash-tl-hour::before{content:'';position:absolute;left:0;top:100%;bottom:0;width:1px;background:var(--bd);opacity:.4}
+.dash-tl-row{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--bd);grid-column:1/-1}
+.dash-tl-row:last-child{border-bottom:none}
+.dash-tl-row:hover{background:rgba(37,99,235,.02)}
+.dash-tl-room{width:110px;min-width:110px;flex-shrink:0;font-size:12px;font-weight:600;white-space:normal;
+  word-break:break-all;text-align:left;padding:8px 10px;color:var(--tx);line-height:1.3}
+.dash-tl-track{flex:1;position:relative;height:36px;background:var(--bg);overflow:hidden;border-radius:4px}
+.dash-tl-bar{position:absolute;top:4px;height:28px;border-radius:6px;display:flex;align-items:center;
+  padding:0 8px;font-size:10px;font-weight:600;color:#fff;cursor:pointer;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;transition:var(--tr);
+  box-shadow:0 2px 8px rgba(0,0,0,.15);letter-spacing:.2px}
+.dash-tl-bar:hover{filter:brightness(1.1);transform:scaleY(1.15);box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:5}
+.dash-tl-now{position:absolute;top:0;bottom:0;width:2px;background:var(--err);z-index:8;pointer-events:none}
+.dash-tl-now::after{content:'';position:absolute;top:-3px;left:-3px;width:8px;height:8px;
+  background:var(--err);border-radius:50%;box-shadow:0 0 6px rgba(220,38,38,.4)}
+.dash-tl-grid{position:absolute;top:0;bottom:0;width:1px;background:var(--bd);opacity:.4}
+.dash-tl-empty{text-align:center;padding:24px;color:var(--tx2);font-size:13px}
+.dash-tl-legend{display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);
+  justify-content:center;flex-wrap:wrap;grid-column:1/-1}
+.dash-tl-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2);font-weight:500}
+.dash-tl-legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* ===== Booking Layout ===== */
+.bk-layout{display:grid;grid-template-columns:260px .9fr 1.1fr;gap:14px;align-items:start}
+
+/* ===== Card ===== */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--bd)}
+.card-hd{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--bd);
+  background:linear-gradient(180deg,#fafbfc 0%,#fff 100%)}
+.card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;background:var(--pri-l);color:var(--pri)}
+.card-title{font-size:15px;font-weight:700}
+.card-body{padding:16px 18px}
+
+/* ===== Sidebar ===== */
+.sidebar{display:flex;flex-direction:column;gap:1px;overflow:hidden;border-radius:var(--r);border:1px solid var(--bd)}
+.sb-header{display:flex;align-items:center;gap:8px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--bd)}
+.sb-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;background:var(--pri-l);color:var(--pri)}
+.sb-label{font-size:15px;font-weight:700;color:var(--tx)}
+.sb-list{background:var(--card);display:flex;flex-direction:column}
+.room-row{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;
+  transition:var(--tr);border-left:3px solid transparent;border-bottom:1px solid var(--bd)}
+.room-row:last-child{border-bottom:none}
+.room-row:hover{background:var(--pri-l)}
+.room-row.active{background:var(--pri-l);border-left-color:var(--pri)}
+.room-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px rgba(0,0,0,.06)}
+.room-rname{font-size:14px;font-weight:600;line-height:1.4;white-space:normal;word-break:break-all}
+.room-rcap{font-size:12px;color:var(--tx2);font-weight:500;white-space:normal;word-break:break-all;line-height:1.3}
+.room-rremark{font-size:11px;color:var(--tx3);margin-top:2px;white-space:normal;word-break:break-all;line-height:1.3}
+.room-info{flex:1;min-width:0;overflow:visible}
+.status-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap;flex-shrink:0;letter-spacing:.2px}
+.tag-free{background:var(--ok-l);color:var(--ok)}
+.tag-busy{background:var(--err-l);color:var(--err)}
+
+/* ===== Form ===== */
+.form-wrap{display:flex;flex-direction:column;gap:14px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.flabel{font-size:12px;font-weight:600;color:var(--tx2)}
+.flabel .req{color:var(--err);margin-left:2px}
+.fc{width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:var(--rs);
+  font-size:13px;font-family:inherit;color:var(--tx);background:#fff;outline:none;transition:var(--tr);
+  appearance:none;-webkit-appearance:none}
+.fc:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.fc:hover:not(:focus){border-color:var(--bd2)}
+select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23475569' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:30px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+textarea.fc{resize:vertical;min-height:70px;font-family:inherit}
+input[type="datetime-local"].fc{font-family:inherit;color-scheme:light}
+.btn-submit{width:100%;padding:12px;background:linear-gradient(135deg,var(--pri),var(--pri-d));
+  color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;
+  cursor:pointer;transition:var(--tr);letter-spacing:.3px;margin-top:4px;
+  box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.35)}
+.btn-submit:active{transform:translateY(0);box-shadow:0 2px 8px rgba(37,99,235,.3)}
+
+/* ===== Stats ===== */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+.scard{background:var(--bg);border-radius:var(--rs);padding:9px 10px;text-align:center}
+.sval{font-size:20px;font-weight:700;line-height:1.2;color:var(--pri)}
+.slabel{font-size:10px;color:var(--tx2);margin-top:2px}
+
+/* ===== Gantt ===== */
+.gantt-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--bd)}
+.date-nav{display:flex;align-items:center;gap:6px;background:var(--bg);padding:4px 10px;border-radius:20px;border:1px solid var(--bd)}
+.dnbtn{background:none;border:none;cursor:pointer;color:var(--tx2);font-size:15px;
+  padding:2px 6px;border-radius:6px;transition:var(--tr);line-height:1}
+.dnbtn:hover{background:#fff;color:var(--pri);box-shadow:var(--sh)}
+.date-lbl{font-size:13px;font-weight:700;min-width:105px;text-align:center}
+.btn-today{background:var(--pri-l);color:var(--pri);border:1px solid var(--pri-ll);padding:5px 14px;
+  border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--tr)}
+.btn-today:hover{background:var(--pri);color:#fff;border-color:var(--pri)}
+
+.gantt-outer{overflow-x:auto;overflow-y:visible}
+.gantt-wrap{min-width:580px}
+.gantt-hd{display:flex;position:sticky;top:0;z-index:10;background:var(--bg)}
+.gantt-room-th{width:110px;min-width:110px;flex-shrink:0;padding:8px 10px;font-size:11px;font-weight:600;
+  color:var(--tx2);border-right:1px solid var(--bd);border-bottom:2px solid var(--bd2);text-align:left}
+.gantt-time-hd{flex:1;position:relative;height:34px;border-bottom:2px solid var(--bd2)}
+.g-hl{position:absolute;top:9px;font-size:10px;color:var(--tx2);transform:translateX(4px);white-space:nowrap;font-weight:500}
+.gantt-body{position:relative}
+.gantt-row{display:flex;border-bottom:1px solid var(--bd);min-height:50px;transition:background .15s}
+.gantt-row:hover{background:rgba(37,99,235,.02)}
+.gantt-row:last-child{border-bottom:none}
+.g-label{width:110px;min-width:110px;flex-shrink:0;padding:8px 10px;display:flex;flex-direction:column;
+  justify-content:center;border-right:1px solid var(--bd);background:var(--card);overflow:visible}
+.g-rn{font-size:12px;font-weight:600;white-space:normal;word-break:break-all;line-height:1.3}
+.g-rc{font-size:10px;color:var(--tx2);margin-top:2px;font-weight:500}
+.g-tl{flex:1;position:relative;background:#fafbfd}
+.g-grid{position:absolute;top:0;bottom:0;width:1px;background:var(--bd)}
+.g-blk{position:absolute;top:6px;height:calc(100% - 12px);border-radius:6px;
+  display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;
+  color:#fff;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  transition:var(--tr);box-shadow:0 2px 8px rgba(0,0,0,.12);letter-spacing:.2px}
+.g-blk:hover{filter:brightness(1.08);transform:scaleY(1.08);box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:5}
+.g-now{position:absolute;top:0;bottom:0;width:2px;background:var(--err);z-index:8;pointer-events:none}
+.g-now::before{content:'当前';position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+  font-size:9px;color:var(--err);font-weight:700;white-space:nowrap;background:#fff;
+  padding:0 4px;border-radius:3px;box-shadow:var(--sh)}
+
+/* ===== Gantt View Tabs ===== */
+.gantt-view-tabs{display:flex;background:var(--bg);border-radius:16px;padding:2px;gap:1px}
+.gv-tab{border:none;background:none;padding:4px 12px;border-radius:14px;font-size:12px;font-weight:500;
+  cursor:pointer;color:var(--tx2);transition:var(--tr)}
+.gv-tab:hover{color:var(--pri)}
+.gv-tab.active{background:var(--pri);color:#fff}
+
+/* ===== Gantt Week/Month ===== */
+.gw-hd{min-width:700px}
+.gw-days-hd{display:flex;flex:1}
+.gw-day-hd{text-align:center;padding:4px 0;font-size:10px;color:var(--tx2)}
+.gw-day-hd.gw-today-hd{color:var(--pri);font-weight:700}
+.gw-day-name{font-size:10px;opacity:.7}
+.gw-day-num{font-size:14px;font-weight:600;margin-top:1px}
+.gw-cells{display:flex;flex:1}
+.gw-cell{flex:1;padding:2px 1px;min-height:44px;border-right:1px solid var(--bd);position:relative;font-size:9px}
+.gw-cell:last-child{border-right:none}
+.gw-cell.gw-today-cell{background:rgba(22,119,255,.04)}
+.gw-row .g-label{min-height:auto}
+.gw-blk{font-size:9px;color:#fff;padding:1px 3px;border-radius:3px;margin-bottom:1px;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.gw-blk:hover{filter:brightness(1.1);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.gw-more{font-size:9px;color:var(--tx2);text-align:center;padding:0 2px;line-height:1.3}
+
+
+
+/* ===== Booking List ===== */
+.bklist{margin-top:4px}
+.bklist-hd{font-size:12px;font-weight:700;color:var(--tx2);
+  display:flex;align-items:center;gap:6px;padding:10px 18px 6px}
+.bk-badge{background:var(--pri-l);color:var(--pri);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.bk-items{display:flex;flex-direction:column;gap:6px;padding:0 14px 14px;max-height:200px;overflow-y:auto}
+.bk-item{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--bg);
+  border-radius:var(--rs);border-left:3px solid transparent;cursor:pointer;transition:var(--tr);
+  border:1px solid transparent}
+.bk-item:hover{background:var(--pri-l);border-color:var(--pri-ll)}
+.bk-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bk-info{flex:1;min-width:0}
+.bk-top{display:flex;align-items:center;gap:6px}
+.bk-rn{font-size:12px;font-weight:600}
+.bk-time{font-size:11px;color:var(--tx2);font-weight:500}
+.bk-sub{font-size:11px;color:var(--tx2);margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-eye{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:13px;
+  padding:3px 6px;border-radius:6px;transition:var(--tr)}
+.bk-eye:hover{color:var(--pri);background:var(--pri-l)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 16px;color:var(--tx3);gap:8px}
+.empty-ic{font-size:32px;opacity:.4}
+.empty p{font-size:13px;font-weight:500}
+
+/* ===== History Page ===== */
+.hist-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.hist-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+.hist-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hist-filters .fc{width:auto;min-width:140px;padding:7px 12px;font-size:12px}
+.hist-filters .btn-admin{padding:7px 14px;font-size:12px}
+.export-dropdown{position:relative}
+.export-menu{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--card);
+  border-radius:var(--r);box-shadow:var(--sh3);z-index:50;min-width:180px;overflow:hidden;border:1px solid var(--bd)}
+.export-menu.show{display:block;animation:menuIn .15s ease}
+@keyframes menuIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.export-menu button{display:block;width:100%;text-align:left;padding:10px 16px;border:none;background:none;
+  font-size:13px;color:var(--tx);cursor:pointer;white-space:nowrap;transition:var(--tr)}
+.export-menu button:hover{background:var(--pri-l);color:var(--pri)}
+.hist-list{display:flex;flex-direction:column;gap:8px}
+.hist-card{background:var(--card);border-radius:var(--r);padding:14px 18px;box-shadow:var(--sh);
+  display:flex;align-items:center;gap:14px;transition:var(--tr);border-left:4px solid transparent;
+  cursor:pointer;border:1px solid var(--bd)}
+.hist-card:hover{box-shadow:var(--sh2);transform:translateX(3px);border-left-color:var(--pri)}
+.hc-date{width:60px;flex-shrink:0;text-align:center}
+.hc-day{font-size:24px;font-weight:800;color:var(--pri);line-height:1}
+.hc-month{font-size:10px;color:var(--tx2);margin-top:3px;font-weight:600;text-transform:uppercase}
+.hc-info{flex:1;min-width:0}
+.hc-top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.hc-room{font-size:14px;font-weight:700;display:flex;align-items:center;gap:5px}
+.hc-room-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.hc-time{font-size:12px;color:var(--tx2);font-weight:500}
+.hc-sub{font-size:12px;color:var(--tx2);display:flex;gap:12px}
+.hc-del{background:none;border:none;cursor:pointer;font-size:14px;padding:6px;border-radius:var(--rs);
+  transition:var(--tr);opacity:.4}
+.hc-del:hover{opacity:1;background:var(--err-l);color:var(--err)}
+.hist-pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px}
+.hist-pager button{padding:6px 14px;border-radius:var(--rs);border:1.5px solid var(--bd);
+  background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:var(--tr)}
+.hist-pager button:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l)}
+.hist-pager button:disabled{opacity:.4;cursor:not-allowed}
+.hist-pager .page-info{font-size:12px;color:var(--tx2);font-weight:500}
+
+/* ===== History Multi-select ===== */
+.hist-batch-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;margin-bottom:8px;
+  background:#f0f5ff;border-radius:var(--r);border:1.5px solid #d6e4ff;flex-wrap:wrap}
+.hist-check-all{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:500;color:var(--tx);cursor:pointer}
+.hist-check-all input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
+.hist-batch-count{font-size:12px;color:var(--pri);font-weight:600}
+.hist-check{width:18px;height:18px;accent-color:var(--pri);cursor:pointer;flex-shrink:0}
+.hist-card.select-mode{cursor:pointer}
+.hist-card.select-mode:active{background:#e6f4ff}
+
+/* ===== Admin Config Page ===== */
+.admin-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.admin-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-admin{padding:8px 16px;border-radius:var(--rs);font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:var(--tr);display:flex;align-items:center;gap:5px}
+.btn-admin.primary{background:var(--pri);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.25)}
+.btn-admin.primary:hover{background:var(--pri-d);box-shadow:0 4px 14px rgba(37,99,235,.35);transform:translateY(-1px)}
+.btn-admin.outline{background:#fff;color:var(--tx);border:1.5px solid var(--bd)}
+.btn-admin.outline:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l)}
+.btn-admin.danger{background:#fff;color:var(--err);border:1.5px solid #fecaca}
+.btn-admin.danger:hover{background:var(--err);color:#fff;border-color:var(--err)}
+
+.room-config-list{display:flex;flex-direction:column;gap:10px}
+.room-config-card{background:var(--card);border-radius:var(--r);padding:16px 18px;
+  box-shadow:var(--sh);display:flex;align-items:center;gap:14px;transition:var(--tr);
+  border:1.5px solid var(--bd);position:relative}
+.room-config-card[draggable="true"]{cursor:grab}
+.room-config-card[draggable="true"]:active{cursor:grabbing}
+.room-config-card:hover{border-color:var(--bd2);box-shadow:var(--sh2)}
+.room-config-card.dragging{opacity:0.4;border-style:dashed;border-color:var(--pri)}
+.room-config-card.drag-over{border-color:var(--pri);background:var(--pri-l);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.rcc-drag{cursor:grab;color:var(--tx3);font-size:18px;flex-shrink:0;padding:2px 4px;
+  user-select:none;touch-action:none;transition:var(--tr)}
+.rcc-drag:hover{color:var(--pri);transform:scale(1.1)}
+.rcc-drag:active{cursor:grabbing;color:var(--pri)}
+.rcc-color{width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.rcc-info{flex:1;min-width:0}
+.rcc-name{font-size:15px;font-weight:700}
+.rcc-meta{font-size:12px;color:var(--tx2);margin-top:3px;font-weight:500}
+.rcc-remark{font-size:11px;color:var(--tx3);margin-top:4px;line-height:1.5;word-break:break-all}
+.rcc-status{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:.2px}
+.rcc-status.active{background:var(--ok-l);color:var(--ok)}
+.rcc-status.maintenance{background:var(--warn-l);color:#b45309}
+.rcc-btns{display:flex;gap:6px;flex-shrink:0}
+.btn-icon{width:36px;height:36px;border-radius:var(--rs);border:1.5px solid var(--bd);
+  background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:var(--tr)}
+.btn-icon:hover{border-color:var(--pri);color:var(--pri);background:var(--pri-l);transform:translateY(-1px)}
+.btn-icon.del:hover{border-color:var(--err);color:var(--err);background:var(--err-l)}
+
+/* ===== Room Edit Modal ===== */
+.color-options{display:flex;gap:8px;flex-wrap:wrap}
+.color-opt{width:32px;height:32px;border-radius:8px;cursor:pointer;border:2.5px solid transparent;
+  transition:var(--tr);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.color-opt:hover{transform:scale(1.15)}
+.color-opt.sel{border-color:var(--tx);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--tx)}
+.status-toggle{display:flex;gap:8px}
+.status-opt{flex:1;padding:8px;border-radius:var(--rs);border:1.5px solid var(--bd);
+  background:#fff;cursor:pointer;text-align:center;font-size:13px;font-weight:500;transition:var(--tr)}
+.status-opt:hover{border-color:var(--pri)}
+.status-opt.sel{border-color:var(--pri);background:var(--pri-l);color:var(--pri)}
+
+/* ===== Admin Login Modal ===== */
+.login-form{display:flex;flex-direction:column;gap:14px}
+.login-form .fg{gap:6px}
+.login-form .flabel{font-size:13px;font-weight:600;color:var(--tx)}
+.login-form .fc{padding:11px 13px;font-size:14px;border-radius:var(--rs)}
+.login-err{color:var(--err);font-size:12px;min-height:18px;text-align:center}
+.login-hint{text-align:center;font-size:11px;color:var(--tx2);margin-top:2px}
+
+/* ===== Upload Zone ===== */
+.upload-zone{border:2px dashed var(--bd);border-radius:var(--rs);padding:16px;
+  text-align:center;cursor:pointer;transition:var(--tr);background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--pri);background:var(--pri-l)}
+.upload-zone .uz-ic{font-size:28px;margin-bottom:6px;opacity:.5}
+.upload-zone .uz-t{font-size:13px;color:var(--tx2);font-weight:500}
+.upload-zone .uz-h{font-size:11px;color:#aab;margin-top:3px}
+.upload-zone input[type=file]{display:none}
+.upload-result{margin-top:10px;border-radius:var(--rs);overflow:hidden}
+.ur-row{display:flex;gap:8px;font-size:12px;padding:6px 10px;background:var(--bg);
+  border-bottom:1px solid var(--bd)}
+.ur-row:last-child{border-bottom:none}
+.ur-row .ur-l{color:var(--tx2);min-width:60px;flex-shrink:0;font-weight:500}
+.ur-row .ur-v{color:var(--tx);flex:1}
+.ur-row .ur-v.editing{background:#fff;border:1px solid var(--pri);border-radius:4px;
+  padding:2px 6px;outline:none}
+.ur-ok{background:#f0fff4;color:var(--ok);font-size:12px;padding:6px 10px;font-weight:500;
+  display:flex;align-items:center;gap:4px}
+.ur-err{background:#fff2f0;color:var(--err);font-size:12px;padding:6px 10px;font-weight:500}
+.ur-warn{background:#fffbe6;color:#d48806;font-size:12px;padding:6px 10px;font-weight:500}
+.ur-img-preview{max-width:100%;max-height:120px;border-radius:6px;margin-top:8px;object-fit:contain}
+
+/* ===== Toast ===== */
+#toasts{position:fixed;top:72px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:var(--rs);font-size:13px;font-weight:500;
+  color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.15);max-width:320px;line-height:1.4;
+  animation:tsIn .3s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15)}
+.toast.ok{background:linear-gradient(135deg,#16a34a,#15803d)}
+.toast.err{background:linear-gradient(135deg,#dc2626,#b91c1c)}
+.toast.warn{background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a1a1a}
+@keyframes tsIn{from{transform:translateX(110%) scale(.9);opacity:0}to{transform:translateX(0) scale(1);opacity:1}}
+@keyframes tsOut{from{transform:translateX(0);opacity:1}to{transform:translateX(110%);opacity:0}}
+
+/* ===== Modal ===== */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:1000;
+  align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.on{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:400px;width:92%;
+  box-shadow:0 24px 60px rgba(15,23,42,.2);animation:mdIn .25s cubic-bezier(.4,0,.2,1)}
+@keyframes mdIn{from{transform:scale(.92) translateY(8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+.md-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.md-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.md-r{display:flex;gap:8px;font-size:13px;padding:6px 0}
+.md-lbl{color:var(--tx2);min-width:60px;flex-shrink:0;font-weight:500}
+.md-val{color:var(--tx);font-weight:600}
+.md-btns{display:flex;gap:9px;justify-content:flex-end}
+.mbtn{padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:var(--tr)}
+.mbtn.gray{background:var(--bg);color:var(--tx)}.mbtn.gray:hover{background:var(--bg2)}
+.mbtn.red{background:var(--err);color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.25)}.mbtn.red:hover{background:#b91c1c}
+
+/* ===== User Panel ===== */
+#userPanel .modal{max-width:320px}
+.up-form{display:flex;flex-direction:column;gap:12px}
+
+/* ===== Equipment Tags ===== */
+.eq-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.eq-tag{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;background:var(--pri-l);
+  color:var(--pri);border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap}
+.eq-overflow{display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:18px;padding:0 4px;background:var(--tx3);color:#fff;
+  border-radius:9px;font-size:10px;font-weight:600;margin-left:2px}
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;margin-top:6px}
+.eq-item{display:flex;align-items:center;gap:5px;padding:7px 9px;border:1.5px solid var(--bd);
+  border-radius:var(--rs);cursor:pointer;font-size:12px;transition:var(--tr);user-select:none}
+.eq-item:hover{border-color:var(--pri);background:var(--pri-l)}
+.eq-item.selected{border-color:var(--pri);background:var(--pri-l);color:var(--pri);font-weight:600}
+.eq-item .eq-ic{font-size:15px;width:18px;text-align:center}
+.eq-item .eq-name{flex:1}
+
+/* ===== Responsive ===== */
+@media(max-width:1000px){
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
+  .dash-sections{grid-template-columns:1fr}
+  .bk-layout{grid-template-columns:180px .85fr 1.15fr;gap:10px}
+}
+@media(max-width:700px){
+  .bk-layout{grid-template-columns:1fr;gap:10px}
+  .sb-list{display:grid;grid-template-columns:repeat(2,1fr);border-radius:var(--r)}
+  .room-row{border-bottom:none;border:1px solid var(--bd);border-radius:var(--rs);margin:4px}
+  .frow{grid-template-columns:1fr}
+  .nav-user span{display:none}
+  .tab-bar{padding:0 10px}
+  .tab-item{padding:10px 12px;font-size:12px}
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .hist-card{flex-wrap:wrap}
+  .hc-date{width:auto}
+}
+@media(max-width:420px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .nav-brand span{display:none}
+  .sb-list{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .hist-filters{flex-direction:column;align-items:stretch}
+  .hist-filters .fc{min-width:auto;width:100%}
+}
+
+/* ===== Stats Page ===== */
+.stats-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.stats-title{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;letter-spacing:-.3px}
+.stats-filters .fc{width:auto;min-width:140px;padding:7px 12px;font-size:12px}
+.stats-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.so-card{background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);text-align:center;transition:var(--tr);border:1px solid var(--bd)}
+.so-card:hover{box-shadow:var(--sh2);transform:translateY(-2px);border-color:var(--bd2)}
+.so-val{font-size:30px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.so-label{font-size:12px;color:var(--tx2);margin-top:4px;font-weight:500}
+.so-icon{font-size:28px;margin-bottom:8px}
+.stats-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.stats-chart-card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border:1px solid var(--bd)}
+.stats-chart-title{font-size:14px;font-weight:700;padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px}
+.stats-chart-body{padding:18px}
+/* Bar chart */
+.st-bar-wrap{display:flex;flex-direction:column;gap:10px}
+.st-bar-row{display:flex;align-items:center;gap:10px}
+.st-bar-label{width:80px;font-size:12px;font-weight:500;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-bar-track{flex:1;height:26px;background:var(--bg);border-radius:13px;overflow:hidden;position:relative}
+.st-bar-fill{height:100%;border-radius:13px;transition:width .6s ease;min-width:2px}
+.st-bar-val{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st-bar-pct{width:50px;font-size:11px;color:var(--tx2);text-align:right;flex-shrink:0;font-weight:600}
+/* Trend chart */
+.st-trend-wrap{display:flex;align-items:flex-end;gap:4px;height:160px;padding-bottom:24px;position:relative}
+.st-trend-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.st-trend-bar{width:100%;max-width:32px;border-radius:4px 4px 0 0;transition:height .6s ease;cursor:pointer;position:relative}
+.st-trend-bar:hover{filter:brightness(1.15);transform:scaleX(1.08)}
+.st-trend-val{font-size:9px;font-weight:700;color:var(--tx2)}
+.st-trend-date{font-size:9px;color:var(--tx3);white-space:nowrap;position:absolute;bottom:-20px;transform:translateX(-50%)}
+.st-trend-zero{position:absolute;bottom:24px;left:0;right:0;border-top:1px dashed var(--bd)}
+/* Time slot */
+.st-slot-wrap{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.st-slot-cell{background:var(--bg);border-radius:var(--rs);padding:6px 4px;text-align:center;transition:var(--tr)}
+.st-slot-cell.active{background:var(--pri-l);border:1px solid rgba(22,119,255,.3)}
+.st-slot-time{font-size:10px;color:var(--tx2);font-weight:500}
+.st-slot-count{font-size:16px;font-weight:700;color:var(--pri);margin-top:2px}
+/* Empty */
+.st-empty{text-align:center;padding:28px;color:var(--tx2);font-size:13px}
+@media(max-width:1000px){
+  .stats-overview{grid-template-columns:repeat(2,1fr)}
+  .stats-charts{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .stats-overview{grid-template-columns:1fr 1fr}
+  .st-slot-wrap{grid-template-columns:repeat(4,1fr)}
+}
+
+/* ===== Cloud Status Indicator ===== */
+.cloud-status{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 12px;
+  border-radius:20px;background:rgba(255,255,255,.1);cursor:default;user-select:none;
+  border:1px solid rgba(255,255,255,.15)}
+.cloud-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cloud-dot.online{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.6);animation:pulse 2s infinite}
+.cloud-dot.offline{background:#f87171;box-shadow:0 0 6px rgba(248,113,113,.4)}
+.cloud-dot.syncing{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,.4);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cloud-label{color:rgba(255,255,255,.9);font-weight:500}
+
+/* ===== Setup Screen ===== */
+.setup-screen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:20px}
+.setup-card{background:#fff;border-radius:20px;padding:36px;max-width:480px;width:100%;
+  box-shadow:0 12px 48px rgba(15,23,42,.1);text-align:center;border:1px solid var(--bd)}
+.setup-icon{font-size:52px;margin-bottom:20px}
+.setup-title{font-size:22px;font-weight:800;margin-bottom:10px;letter-spacing:-.3px}
+.setup-desc{font-size:13px;color:var(--tx2);margin-bottom:28px;line-height:1.7}
+.setup-form{text-align:left;display:flex;flex-direction:column;gap:14px}
+.setup-form .fg{gap:5px}
+.setup-form .flabel{font-size:13px;font-weight:600;color:var(--tx)}
+.setup-form .fc{padding:11px 13px;font-size:13px;border-radius:var(--rs)}
+.setup-hint{font-size:11px;color:var(--tx3);line-height:1.5;margin-top:2px}
+.setup-btn{padding:12px;background:linear-gradient(135deg,var(--pri),var(--pri-d));
+  color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;
+  transition:var(--tr);margin-top:4px;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.setup-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.35)}
+.setup-err{color:var(--err);font-size:12px;min-height:18px;text-align:center}
+.setup-ok{color:var(--ok);font-size:13px;font-weight:600;padding:10px;background:var(--ok-l);border-radius:var(--rs)}
+</style>
+</head>
+<body>
+
+<!-- Setup Overlay (shown when no Supabase config) -->
+<div class="overlay" id="setupOv" style="display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)">
+  <div class="setup-card">
+    <div class="setup-icon" id="setupIcon">☁️</div>
+    <div class="setup-title" id="setupTitle">连接云端数据库</div>
+    <div class="setup-desc" id="setupDesc">
+      输入 Supabase 项目信息，即可启用多用户实时同步。<br>
+      所有预约数据将存储在云端，所有人共享最新信息。
+    </div>
+    <div id="setupForm">
+      <div class="setup-form">
+        <div class="fg">
+          <label class="flabel">Project URL</label>
+          <input type="url" class="fc" id="setupUrl" value="https://dxjcrizhsqfkfmtujwfm.supabase.co" placeholder="https://xxxxx.supabase.co"/>
+          <div class="setup-hint">在 Supabase Dashboard → Settings → API 中找到</div>
+        </div>
+        <div class="fg">
+          <label class="flabel">Anon Public Key</label>
+          <input type="text" class="fc" id="setupKey" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4amNyaXpoc3Fma2ZtdHVqd2ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NTQxNjMsImV4cCI6MjA5MjMzMDE2M30.4D0EFwKwZc_0SFm67EozktxiU_UNcImlNF9omX_8Iws" placeholder="eyJhbGciOiJIUzI1NiIs..."/>
+          <div class="setup-hint">Project API keys → anon public</div>
+        </div>
+        <div class="setup-err" id="setupErr"></div>
+        <button type="button" class="setup-btn" id="setupBtn">连接并启动</button>
+        <div style="text-align:center;margin-top:8px">
+          <button type="button" id="skipBtn" style="background:none;border:none;color:var(--tx2);font-size:12px;cursor:pointer;text-decoration:underline">跳过，使用本地模式（数据仅在当前浏览器中）</button>
+          <button type="button" id="cancelReconfigBtn" style="display:none;background:none;border:none;color:var(--tx2);font-size:12px;cursor:pointer;text-decoration:underline">取消</button>
+        </div>
+      </div>
+    </div>
+    <div id="setupOk" style="display:none">
+      <div class="setup-ok">✅ 云端连接成功！正在加载数据...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Navbar -->
+<nav class="nav">
+  <div class="nav-brand">
+    <img class="nav-logo" src="LOGO.png" alt="logo"/>
+    <span>应急通信局会议预约系统</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user">
+      <div class="nav-avatar" id="navAvatar" onclick="openUserPanel()">?</div>
+      <span id="navName"></span>
+    </div>
+    <div class="cloud-status" id="cloudStatus" title="云端同步状态">
+      <div class="cloud-dot offline" id="cloudDot"></div>
+      <span class="cloud-label" id="cloudLabel">离线</span>
+      <button class="nav-btn" id="refreshBtn" onclick="manualRefresh()" style="display:none;font-size:11px;margin-left:4px" title="从云端重新拉取数据">🔄 同步</button>
+    </div>
+    <button class="nav-btn" id="reconfigBtn" onclick="openReconfig()" style="display:none;font-size:11px">⚙️ 云端配置</button>
+    <button class="nav-btn" onclick="openUserPanel()">切换用户</button>
+  </div>
+</nav>
+
+<!-- Tab Bar -->
+<div class="tab-bar" id="tabBar">
+  <div class="tab-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+    <span class="tab-ic">📊</span>概览
+  </div>
+  <div class="tab-item" data-tab="booking" onclick="switchTab('booking')">
+    <span class="tab-ic">📝</span>新建预约
+  </div>
+  <div class="tab-item" data-tab="history" onclick="switchTab('history')">
+    <span class="tab-ic">📋</span>预约记录
+  </div>
+  <div class="tab-item" data-tab="stats" onclick="switchTab('stats')">
+    <span class="tab-ic">📈</span>统计分析
+  </div>
+  <div class="tab-item admin-tab" data-tab="admin" id="adminTab" onclick="switchTab('admin')" style="display:none">
+    <span class="tab-ic">⚙️</span>会议室管理
+  </div>
+</div>
+
+<!-- ========== PAGE: Dashboard ========== -->
+<div class="page active" id="page-dashboard">
+  <div class="dash-grid" id="dashStats"></div>
+  <div class="dash-sections">
+    <div class="dash-sec">
+      <div class="dash-sec-hd">
+        <span class="dash-sec-title">🏢 会议室状态</span>
+        <button class="dash-sec-more" onclick="switchTab('admin')">管理 →</button>
+      </div>
+      <div class="dash-sec-body">
+        <div class="qroom-list" id="dashRooms"></div>
+      </div>
+    </div>
+    <!-- 今日时间轴 -->
+    <div class="dash-sec">
+      <div class="dash-sec-hd">
+        <span class="dash-sec-title">📊 今日预约时间轴</span>
+        <button class="dash-sec-more" onclick="switchTab('booking')">详细甘特图 →</button>
+      </div>
+      <div class="dash-sec-body" style="padding:0">
+        <div class="dash-timeline" id="dashTimeline"></div>
+      </div>
+    </div>
+    <div class="dash-sec">
+      <div class="dash-sec-hd">
+        <span class="dash-sec-title">📅 今日预约</span>
+        <button class="dash-sec-more" onclick="switchTab('history')">全部记录 →</button>
+      </div>
+      <div class="dash-sec-body">
+        <div class="qbk-list" id="dashBookings"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE: Booking ========== -->
+<div class="page" id="page-booking">
+  <div class="bk-layout">
+    <!-- Sidebar -->
+    <aside>
+      <div class="card sidebar">
+        <div class="sb-header">
+          <div class="sb-icon">📍</div>
+          <span class="sb-label">会议室列表</span>
+        </div>
+        <div class="sb-list" id="sbList"></div>
+      </div>
+    </aside>
+
+    <!-- Form -->
+    <section class="card">
+      <div class="card-hd">
+        <div class="card-icon">📝</div>
+        <span class="card-title" id="formTitle">新建预约</span>
+      </div>
+      <div class="card-body">
+        <div class="stats" id="statsBar"></div>
+        <form class="form-wrap" id="bkForm" onsubmit="return false">
+          <div class="fg">
+            <label class="flabel">会议室 <span class="req">*</span></label>
+            <select class="fc" id="fRoom" required>
+              <option value="">— 请选择会议室 —</option>
+            </select>
+          </div>
+          <div class="frow">
+            <div class="fg">
+              <label class="flabel">开始时间 <span class="req">*</span></label>
+              <input type="datetime-local" class="fc" id="fStart" step="300" required/>
+            </div>
+            <div class="fg">
+              <label class="flabel">结束时间 <span class="req">*</span></label>
+              <input type="datetime-local" class="fc" id="fEnd" step="300" required/>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="flabel">预约人 <span class="req">*</span></label>
+            <input type="text" class="fc" id="fPerson" placeholder="请输入预约人姓名" required/>
+          </div>
+          <div class="fg">
+            <label class="flabel">预约部门/单位 <span class="req">*</span></label>
+            <select class="fc" id="fDept">
+              <option value="">— 请选择部门/单位 —</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="flabel">会议事由 <span class="req">*</span></label>
+            <textarea class="fc" id="fReason" placeholder="请输入会议主题或预约事由" required></textarea>
+          </div>
+          <button class="btn-submit" id="btnSubmit" onclick="handleSubmit()">✅ 提交预约</button>
+          <button class="btn-submit" id="btnCancelEdit" style="display:none;background:var(--tx2);margin-left:8px" onclick="cancelEdit()">取消编辑</button>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="uz-ic">📎</div>
+            <div class="uz-t">上传文件智能识别预约</div>
+            <div class="uz-h">支持 会议通知截图(.png/.jpg) / 文本文件(.txt/.csv) / Excel(.xlsx)</div>
+            <input type="file" id="fileInput" accept=".txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.bmp,.webp"/>
+          </div>
+          <div id="uploadResult"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Gantt + List -->
+    <section class="card" style="display:flex;flex-direction:column">
+      <div class="card-hd">
+        <div class="card-icon">📊</div>
+        <span class="card-title">预约时间轴</span>
+      </div>
+      <div class="gantt-controls">
+        <div class="gantt-view-tabs">
+          <button class="gv-tab active" data-view="day" onclick="setGanttView('day')">日</button>
+          <button class="gv-tab" data-view="week" onclick="setGanttView('week')">周</button>
+
+        </div>
+        <div class="date-nav">
+          <button class="dnbtn" id="ganttPrev" onclick="ganttPrev()" title="上一时段">&#8249;</button>
+          <span class="date-lbl" id="dateLbl"></span>
+          <button class="dnbtn" id="ganttNext" onclick="ganttNext()" title="下一时段">&#8250;</button>
+        </div>
+        <button class="btn-today" onclick="goToday()">今天</button>
+      </div>
+      <div class="gantt-outer">
+        <div class="gantt-wrap" id="ganttWrap"></div>
+      </div>
+      <div class="bklist">
+        <div class="bklist-hd">📋 <span id="bkListTitle">当日预约</span> <span class="bk-badge" id="bkBadge">0</span></div>
+        <div class="bk-items" id="bkItems"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ========== PAGE: History ========== -->
+<div class="page" id="page-history">
+  <div class="hist-header">
+    <div class="hist-title">📋 预约记录</div>
+    <div class="hist-filters">
+      <input type="text" class="fc" id="histSearch" placeholder="🔍 搜索会议室/预约人/事由" oninput="renderHistory()"/>
+      <select class="fc" id="histRoomFilter" onchange="renderHistory()">
+        <option value="">全部会议室</option>
+      </select>
+      <button class="btn-admin outline" onclick="clearHistFilters()" style="display:none">清除筛选</button>
+      <button class="btn-admin outline" id="histMultiBtn" onclick="toggleHistSelectMode()">☑️ 多选</button>
+      <div class="export-dropdown" id="exportDropdown">
+        <button class="btn-admin primary" onclick="toggleExportMenu()">📥 导出</button>
+        <div class="export-menu" id="exportMenu">
+          <button onclick="exportBookings('xlsx')">📊 导出为 Excel (.xlsx)</button>
+          <button onclick="exportBookings('csv')">📄 导出为 CSV (.csv)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hist-batch-bar" id="histBatchBar" style="display:none">
+    <label class="hist-check-all"><input type="checkbox" id="histCheckAll" onchange="toggleHistSelectAll(this.checked)"/> 全选当前页</label>
+    <span class="hist-batch-count" id="histBatchCount">已选 0 条</span>
+    <button class="btn-admin danger" onclick="batchHideBookings()">🗑️ 批量移除</button>
+    <button class="btn-admin outline" onclick="cancelHistSelect()">取消</button>
+  </div>
+  <div class="hist-list" id="histList"></div>
+  <div class="hist-pager" id="histPager"></div>
+</div>
+
+<!-- ========== PAGE: Statistics ========== -->
+<div class="page" id="page-stats">
+  <div class="stats-header">
+    <div class="stats-title">📈 使用统计分析</div>
+    <div class="stats-filters">
+      <select class="fc" id="statsPeriod" onchange="renderStats()">
+        <option value="7">最近 7 天</option>
+        <option value="30" selected>最近 30 天</option>
+        <option value="90">最近 90 天</option>
+        <option value="0">全部</option>
+      </select>
+    </div>
+  </div>
+  <div class="stats-overview" id="statsOverview"></div>
+  <div class="stats-charts">
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">📊 每日预约趋势</div>
+      <div class="stats-chart-body" id="statsTrend"></div>
+    </div>
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">🏢 会议室使用率排名</div>
+      <div class="stats-chart-body" id="statsRoomRank"></div>
+    </div>
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">⏰ 热门预约时段分布</div>
+      <div class="stats-chart-body" id="statsTimeSlot"></div>
+    </div>
+    <div class="stats-chart-card">
+      <div class="stats-chart-title">🏢 部门预约排行</div>
+      <div class="stats-chart-body" id="statsDeptRank"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE: Admin ========== -->
+<div class="page" id="page-admin">
+  <div class="admin-header">
+    <div class="admin-title">⚙️ 会议室配置管理</div>
+    <div class="admin-actions">
+      <button class="btn-admin primary" onclick="openRoomModal(null)">➕ 新增会议室</button>
+      <button class="btn-admin danger" onclick="adminLogout()">🚪 退出管理</button>
+    </div>
+  </div>
+  <div class="room-config-list" id="roomConfigList"></div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts"></div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detailOv">
+  <div class="modal">
+    <div class="md-title">📅 预约详情</div>
+    <div class="md-rows" id="mdRows"></div>
+    <div class="md-btns">
+      <button class="mbtn gray" onclick="closeDetail()">关闭</button>
+      <button class="mbtn" style="background:var(--pri);color:#fff" id="mdEdit">✏️ 编辑预约</button>
+      <button class="mbtn red" id="mdDel">🗑 删除预约</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Panel -->
+<div class="overlay" id="userPanel">
+  <div class="modal">
+    <div class="md-title" id="userPanelTitle">👤 用户设置</div>
+    <div id="userPanelHint" style="font-size:13px;color:var(--tx2);margin-bottom:12px">修改您的姓名，修改后将自动保存。</div>
+    <div class="up-form">
+      <div class="fg">
+        <label class="flabel">您的姓名 <span class="req">*</span></label>
+        <input type="text" class="fc" id="uName" placeholder="请输入您的姓名" maxlength="20"/>
+      </div>
+    </div>
+    <div class="md-btns" style="margin-top:16px">
+      <button class="mbtn gray" id="userPanelCancel" onclick="closeUserPanel()">取消</button>
+      <button class="mbtn" style="background:var(--pri);color:#fff" onclick="saveUser()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Login Modal -->
+<div class="overlay" id="adminLoginOv">
+  <div class="modal" style="max-width:360px">
+    <div class="md-title">🔐 管理员登录</div>
+    <div class="login-form">
+      <div class="fg">
+        <label class="flabel">账号</label>
+        <input type="text" class="fc" id="loginUser" placeholder="请输入管理员账号" autocomplete="username"/>
+      </div>
+      <div class="fg">
+        <label class="flabel">密码</label>
+        <input type="password" class="fc" id="loginPwd" placeholder="请输入密码" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doAdminLogin()"/>
+      </div>
+      <div class="login-err" id="loginErr"></div>
+    </div>
+    <div class="md-btns">
+      <button class="mbtn gray" onclick="closeAdminLogin()">取消</button>
+      <button class="mbtn" style="background:var(--pri);color:#fff" onclick="doAdminLogin()">登录</button>
+    </div>
+    <div class="login-hint">仅限管理员访问配置功能</div>
+  </div>
+</div>
+
+<!-- Room Edit Modal -->
+<div class="overlay" id="roomEditOv">
+  <div class="modal" style="max-width:440px">
+    <div class="md-title" id="roomEditTitle">➕ 新增会议室</div>
+    <form class="form-wrap" id="roomForm" onsubmit="return false">
+      <div class="fg">
+        <label class="flabel">会议室名称 <span class="req">*</span></label>
+        <input type="text" class="fc" id="rfName" placeholder="如：创新会议室" required/>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="flabel">容纳人数 <span class="req">*</span></label>
+          <input type="number" class="fc" id="rfCap" placeholder="如：10" min="1" max="500" required/>
+        </div>
+        <div class="fg">
+          <label class="flabel">位置 <span class="req">*</span></label>
+          <input type="text" class="fc" id="rfLoc" placeholder="如：3F-A区" required/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="flabel">标识颜色</label>
+        <div class="color-options" id="colorOpts"></div>
+      </div>
+      <div class="fg">
+        <label class="flabel">状态</label>
+        <div class="status-toggle" id="statusToggle">
+          <div class="status-opt sel" data-status="active" onclick="selStatus('active')">✅ 启用</div>
+          <div class="status-opt" data-status="maintenance" onclick="selStatus('maintenance')">🔧 维护中</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="flabel">设备设施</label>
+        <div class="eq-grid" id="rfEquip"></div>
+      </div>
+      <div class="fg">
+        <label class="flabel">备注</label>
+        <textarea class="fc" id="rfRemark" placeholder="可填写使用须知等" rows="2" style="resize:vertical;min-height:50px"></textarea>
+      </div>
+    </form>
+    <div class="md-btns" style="margin-top:16px">
+      <button class="mbtn gray" onclick="closeRoomModal()">取消</button>
+      <button class="mbtn" style="background:var(--pri);color:#fff" onclick="saveRoomConfig()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Room Delete Confirm Modal -->
+<div class="overlay" id="roomDelOv">
+  <div class="modal" style="max-width:360px">
+    <div class="md-title">⚠️ 确认删除</div>
+    <p style="font-size:14px;color:var(--tx);line-height:1.6;margin-bottom:6px">
+      确定要删除会议室 <strong id="delRoomName"></strong> 吗？
+    </p>
+    <p style="font-size:12px;color:var(--err);margin-bottom:16px" id="delRoomWarn"></p>
+    <div class="md-btns">
+      <button class="mbtn gray" onclick="closeRoomDel()">取消</button>
+      <button class="mbtn red" onclick="confirmDelRoom()">🗑 确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Recognition Modal -->
+<div class="overlay" id="uploadOv">
+  <div class="modal" style="max-width:420px">
+    <div class="md-title">🔍 识别结果确认</div>
+    <div id="uploadPreview"></div>
+    <div class="upload-result" id="uploadModalResult"></div>
+    <div class="md-btns" style="margin-top:14px">
+      <button class="mbtn gray" onclick="closeUploadModal()">取消</button>
+      <button class="mbtn" style="background:var(--pri);color:#fff" id="uploadConfirmBtn" onclick="confirmUploadBooking()">✅ 确认预约</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   立即绑定按钮事件（放在最前面，不依赖后续代码）
+   ============================================================ */
+document.getElementById('setupBtn').addEventListener('click', function(){
+  var url = document.getElementById('setupUrl').value.trim();
+  var key = document.getElementById('setupKey').value.trim();
+  var errEl = document.getElementById('setupErr');
+  var btn = document.getElementById('setupBtn');
+  if(!url || !key){ errEl.textContent = '请填写 Project URL 和 Anon Key'; return; }
+  errEl.textContent = '';
+  btn.textContent = '连接中...';
+  btn.disabled = true;
+  // 动态加载 Supabase SDK 并连接
+  import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm').then(function(mod){
+    var client = mod.createClient(url, key);
+    return client.from('huiyishi').select('id').limit(1).then(function(res){
+      if(res.error) throw res.error;
+      // 保存配置
+      localStorage.setItem('mrb_supabase_config', JSON.stringify({url: url, key: key}));
+      // 调用全局 initSupabase 和 loadAllFromCloud
+      document.getElementById('setupForm').style.display = 'none';
+      document.getElementById('setupOk').style.display = 'block';
+      if(typeof window._afterSetup === 'function') window._afterSetup(client);
+    });
+  }).catch(function(e){
+    errEl.textContent = '连接失败: ' + (e.message || '请检查URL和Key是否正确');
+    btn.textContent = '连接并启动';
+    btn.disabled = false;
+  });
+});
+
+document.getElementById('skipBtn').addEventListener('click', function(){
+  document.getElementById('setupOv').style.display = 'none';
+  document.getElementById('reconfigBtn').style.display = '';
+  document.getElementById('refreshBtn').style.display = '';
+  if(typeof window._afterSkip === 'function') window._afterSkip();
+});
+
+document.getElementById('cancelReconfigBtn').addEventListener('click', function(){
+  document.getElementById('setupOv').style.display = 'none';
+});
+
+/* ============================================================
+   SUPABASE REALTIME
+   ============================================================ */
+const SUPABASE_LS_KEY = 'mrb_supabase_config';
+var supabase = null;
+var supabaseReady = false;
+var realtimeChannel = null;
+
+/* ---- Setup ---- */
+function loadSupabaseConfig(){
+  try { return JSON.parse(localStorage.getItem(SUPABASE_LS_KEY)); } catch { return null; }
+}
+
+async function initSupabase(url, key){
+  var mod = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  supabase = mod.createClient(url, key);
+  // Test connection
+  const { data, error } = await supabase.from('huiyishi').select('id').limit(1);
+  if(error) throw error;
+  // Save config
+  localStorage.setItem(SUPABASE_LS_KEY, JSON.stringify({url, key}));
+  supabaseReady = true;
+  updateCloudStatus('online');
+}
+
+async function doSetup(){
+  const url = document.getElementById('setupUrl').value.trim();
+  const key = document.getElementById('setupKey').value.trim();
+  const errEl = document.getElementById('setupErr');
+  if(!url || !key){ errEl.textContent = '请填写 Project URL 和 Anon Key'; return; }
+  errEl.textContent = '';
+  // 按钮反馈
+  var btn = document.querySelector('.setup-btn');
+  btn.textContent = '连接中...';
+  btn.disabled = true;
+  try {
+    await initSupabase(url, key);
+    document.getElementById('setupForm').style.display = 'none';
+    document.getElementById('setupOk').style.display = 'block';
+    await loadAllFromCloud();
+    setTimeout(()=>{
+      document.getElementById('setupOv').style.display = 'none';
+      startRealtime();
+      initUI();
+    }, 500);
+  } catch(e){
+    errEl.textContent = '连接失败: ' + (e.message||'请检查URL和Key是否正确');
+    btn.textContent = '连接并启动';
+    btn.disabled = false;
+  }
+}
+
+
+function showSetupIfNeeded(){
+  var cfg = loadSupabaseConfig();
+  if(!cfg){
+    // 首次使用：显示 setup，URL 和 Key 已预填，自动触发连接
+    document.getElementById('setupOv').style.display = 'flex';
+    document.getElementById('skipBtn').style.display = '';
+    document.getElementById('cancelReconfigBtn').style.display = 'none';
+    // 自动点击"连接并启动"
+    setTimeout(function(){ document.getElementById('setupBtn').click(); }, 300);
+    return false;
+  }
+  // 有已保存的配置，隐藏 setup 对话框，显示"重新配置"按钮
+  document.getElementById('setupOv').style.display = 'none';
+  document.getElementById('reconfigBtn').style.display = '';
+  document.getElementById('refreshBtn').style.display = '';
+  return true;
+}
+
+function openReconfig(){
+  var cfg = loadSupabaseConfig();
+  document.getElementById('setupUrl').value = cfg ? cfg.url : '';
+  document.getElementById('setupKey').value = cfg ? cfg.key : '';
+  document.getElementById('setupErr').textContent = '';
+  document.getElementById('setupForm').style.display = '';
+  document.getElementById('setupOk').style.display = 'none';
+  document.getElementById('setupBtn').textContent = '保存并重连';
+  document.getElementById('setupBtn').disabled = false;
+  // 重新配置模式：隐藏跳过，显示取消
+  document.getElementById('skipBtn').style.display = 'none';
+  document.getElementById('cancelReconfigBtn').style.display = '';
+  document.getElementById('setupOv').style.display = 'flex';
+}
+
+function skipSetup(){
+  supabaseReady = false;
+  document.getElementById('setupOv').style.display = 'none';
+  updateCloudStatus('offline');
+  document.getElementById('reconfigBtn').style.display = '';
+  document.getElementById('refreshBtn').style.display = '';
+  loadAllLocal();
+  initUI();
+}
+
+function updateCloudStatus(status){
+  const dot = document.getElementById('cloudDot');
+  const label = document.getElementById('cloudLabel');
+  dot.className = 'cloud-dot ' + status;
+  label.textContent = status === 'online' ? '已同步' : status === 'syncing' ? '同步中' : '离线';
+}
+
+/* ============================================================
+   DATA SCHEMA
+   rooms   : { id, name, capacity, color, location, status }
+   bookings: { id, roomId, startTime(ISO), endTime(ISO), person, reason, createdAt }
+   ============================================================ */
+
+const COLORS = ['#1677ff','#52c41a','#fa8c16','#722ed1','#eb2f96','#13c2c2','#f5222d',
+  '#2f54eb','#1890ff','#0fc6c2','#36cfc9','#73d13d','#a0d911','#fadb14',
+  '#faad14','#ff7a45','#f759ab','#9254de','#597ef7','#ff4d4f'];
+
+/* ---- Equipment Presets ---- */
+const EQUIPMENT_PRESETS = [
+  {name:'投影仪', icon:'📽️'},
+  {name:'白板', icon:'📋'},
+  {name:'视频会议', icon:'🎥'},
+  {name:'电话', icon:'📞'},
+  {name:'电视屏幕', icon:'📺'},
+  {name:'音响', icon:'🔊'},
+  {name:'麦克风', icon:'🎙️'},
+  {name:'摄像头', icon:'📷'},
+  {name:'打印机', icon:'🖨️'},
+  {name:'WiFi', icon:'📶'},
+  {name:'新视通', icon:'📡'},
+];
+
+const DEFAULT_ROOMS = [
+  {id:'r1',name:'创新会议室',capacity:8, color:'#1677ff',location:'3F-A区',status:'active',equipment:'["投影仪","白板","视频会议"]'},
+  {id:'r2',name:'大型报告厅',capacity:50,color:'#52c41a',location:'2F-中央',status:'active',equipment:'["投影仪","音响","麦克风","视频会议"]'},
+  {id:'r3',name:'小型洽谈室',capacity:4, color:'#fa8c16',location:'4F-B区',status:'active',equipment:'["白板","电话"]'},
+  {id:'r4',name:'多媒体室',  capacity:20,color:'#722ed1',location:'3F-C区',status:'active',equipment:'["投影仪","电视屏幕","音响","视频会议","摄像头"]'},
+  {id:'r5',name:'培训教室',  capacity:30,color:'#eb2f96',location:'5F-D区',status:'active',equipment:'["投影仪","白板","音响","麦克风"]'},
+];
+
+const SK_ROOMS = 'mrb_rooms_v3';
+const SK_BKGS  = 'mrb_bkgs_v3';
+const SK_USER  = 'mrb_user_v3';
+const SK_HIDDEN = 'mrb_hidden_v3';
+
+/* ---- State ---- */
+let rooms = [];
+let bookings = [];
+let hiddenIds = []; // 历史记录中已隐藏的预约ID
+let currentUser = '';
+let selRoomId = 'r1';
+let chartDate = new Date();
+let delTargetId = null;
+let currentTab = 'dashboard';
+let histPage = 1;
+const HIST_PER_PAGE = 15;
+let histSelectedIds = new Set(); // 历史记录多选 ID 集合
+let histSelectMode = false; // 是否处于多选模式
+let _ganttTimer = null; // 甘特图定时刷新定时器
+const DEPARTMENTS = ['办公室','党群办','人力资源部','计划财务部','运营支撑部','市场服务部',
+  '跨域服务保障中心','卫星服务保障中心','基础网共新保障中心','基础网虹桥保障中心',
+  '基础网金桥保障中心','政企客户中心','集群业务中心','业务测试中心'];
+
+let editingBookingId = null; // 当前编辑中的预约 ID（null 为新建模式）
+let ganttViewMode = 'day'; // 甘特图视图模式：day / week
+
+/* ---- Cloud Persistence ---- */
+async function loadAllFromCloud(){
+  if(!supabase) return loadAllLocal();
+  updateCloudStatus('syncing');
+  try {
+    const { data: roomData, error: roomErr } = await supabase.from('huiyishi').select('*').order('sort_order', {ascending: true}).order('created_at', {ascending: true});
+    if(roomErr) throw new Error('加载会议室失败: ' + roomErr.message);
+    const { data: bkData, error: bkErr } = await supabase.from('bookings').select('*').order('created_at', {ascending: false});
+    if(bkErr) throw new Error('加载预约失败: ' + bkErr.message);
+    // 云端有会议室数据则使用云端数据（即使为空也尊重，不再强制回退到默认值）
+    if(roomData){
+      rooms = roomData.map(r => ({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || '', equipment: r.equipment || ''}));
+    } else {
+      // roomData 为 null/undefined（查询失败），回退到本地缓存
+      loadAllLocal();
+      return;
+    }
+    // 仅在首次初始化（云端和本地均为空）时种子默认数据
+    if(rooms.length === 0){
+      try {
+        const localRooms = JSON.parse(localStorage.getItem(SK_ROOMS));
+        if(localRooms && localRooms.length > 0){
+          rooms = localRooms;
+          for(const r of rooms){
+            await supabase.from('huiyishi').upsert({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || '', equipment: r.equipment || ''});
+          }
+        }
+        // 如果本地也为空，则使用 DEFAULT_ROOMS 种子（仅限首次）
+        else {
+          rooms = [...DEFAULT_ROOMS];
+          for(const r of rooms){
+            await supabase.from('huiyishi').insert({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || '', equipment: r.equipment || ''});
+          }
+        }
+      } catch(e){ rooms = [...DEFAULT_ROOMS]; }
+    }
+    rooms.forEach(r => { if(!r.status) r.status = 'active'; });
+    bookings = (bkData || []).map(b => ({id: b.id, roomId: b.room_id, startTime: b.start_time, endTime: b.end_time, person: b.person, department: b.department||'', reason: b.reason, createdAt: b.created_at}));
+    // Also cache locally for offline fallback
+    localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+    localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+
+    // 加载云端隐藏记录（优先云端，本地作为离线回退）
+    await loadHiddenFromCloud();
+
+    updateCloudStatus('online');
+  } catch(e){
+    console.warn('Cloud load failed, using local cache:', e);
+    loadAllLocal();
+    updateCloudStatus('offline');
+    toast('⚠️ 云端同步失败，当前显示本地缓存数据，可能不是最新','warn');
+  }
+}
+
+function loadAllLocal(){
+  try{ rooms = JSON.parse(localStorage.getItem(SK_ROOMS)) || DEFAULT_ROOMS; }
+  catch(e){ rooms = [...DEFAULT_ROOMS]; }
+  rooms.forEach(r => { if(!r.status) r.status = 'active'; });
+  try{ bookings = JSON.parse(localStorage.getItem(SK_BKGS)) || []; }
+  catch(e){ bookings = []; }
+  try{ hiddenIds = JSON.parse(localStorage.getItem(SK_HIDDEN)) || []; }
+  catch(e){ hiddenIds = []; }
+  try{ const u=localStorage.getItem(SK_USER); if(u) currentUser=u; }
+  catch(e){ console.warn('read user error:', e); }
+}
+
+async function loadAll(){
+  try{ const u=localStorage.getItem(SK_USER); if(u) currentUser=u; } catch(e){ console.warn('read user error:', e); }
+  if(supabaseReady){
+    await loadAllFromCloud();
+  } else {
+    loadAllLocal();
+  }
+}
+
+async function saveRooms(){
+  localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+  if(!supabaseReady) return;
+  try {
+    // 先 upsert 基础字段（不含 sort_order，兼容旧表结构）
+    const rows = rooms.map(r => ({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || ''}));
+    await supabase.from('huiyishi').upsert(rows, {onConflict: 'id'});
+    // 再尝试更新 sort_order（如果列不存在则静默失败）
+    await Promise.allSettled(rooms.map((r, i) => supabase.from('huiyishi').update({sort_order: i}).eq('id', r.id)));
+  } catch(e){ console.warn('saveRooms cloud error:', e); }
+}
+
+async function saveBkgs(){
+  localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+  if(!supabaseReady) return;
+  try {
+    const rows = bookings.map(b => ({id: b.id, room_id: b.roomId, start_time: b.startTime, end_time: b.endTime, person: b.person, department: b.department || '', reason: b.reason}));
+    await supabase.from('bookings').upsert(rows, {onConflict: 'id'});
+  } catch(e){ console.warn('saveBkgs cloud error:', e); }
+}
+
+/* ---- Hidden Bookings Cloud Sync ---- */
+async function loadHiddenFromCloud(){
+  try{ hiddenIds = JSON.parse(localStorage.getItem(SK_HIDDEN)) || []; }
+  catch(e){ hiddenIds = []; }
+  if(!supabaseReady || !currentUser) return;
+  try {
+    const { data } = await supabase.from('user_prefs')
+      .select('pref_value').eq('user_name', currentUser).eq('pref_key', 'hidden_bookings').maybeSingle();
+    if(data && data.pref_value){
+      hiddenIds = JSON.parse(data.pref_value);
+      localStorage.setItem(SK_HIDDEN, JSON.stringify(hiddenIds));
+    }
+  } catch(e){ console.warn('loadHiddenFromCloud error:', e); }
+}
+
+async function saveHiddenToCloud(){
+  localStorage.setItem(SK_HIDDEN, JSON.stringify(hiddenIds));
+  if(!supabaseReady || !currentUser) return;
+  try {
+    await supabase.from('user_prefs').upsert({
+      user_name: currentUser,
+      pref_key: 'hidden_bookings',
+      pref_value: JSON.stringify(hiddenIds)
+    }, {onConflict: 'user_name,pref_key'});
+  } catch(e){ console.warn('saveHiddenToCloud error:', e); }
+}
+
+async function saveUsr(){ localStorage.setItem(SK_USER, currentUser); }
+
+/* ---- Single record cloud operations ---- */
+async function cloudInsertBooking(bk){
+  if(!supabaseReady) return;
+  try {
+    await supabase.from('bookings').insert({
+      id: bk.id, room_id: bk.roomId, start_time: bk.startTime,
+      end_time: bk.endTime, person: bk.person, department: bk.department || '', reason: bk.reason
+    });
+  } catch(e){ console.warn('cloudInsertBooking error:', e); }
+}
+
+async function cloudDeleteBooking(id){
+  if(!supabaseReady) return;
+  try { await supabase.from('bookings').delete().eq('id', id); } catch(e){ console.warn('cloudDeleteBooking error:', e); }
+}
+
+async function cloudUpsertBooking(bk){
+  if(!supabaseReady) return;
+  try {
+    await supabase.from('bookings').upsert({
+      id: bk.id, room_id: bk.roomId, start_time: bk.startTime,
+      end_time: bk.endTime, person: bk.person, department: bk.department || '', reason: bk.reason
+    }, {onConflict: 'id'});
+  } catch(e){ console.warn('cloudUpsertBooking error:', e); }
+}
+
+async function cloudUpsertRoom(rm){
+  if(!supabaseReady) return;
+  try {
+    const idx = rooms.findIndex(r => r.id === rm.id);
+    const sortOrder = idx >= 0 ? idx : rooms.length;
+    await supabase.from('huiyishi').upsert({
+      id: rm.id, name: rm.name, capacity: rm.capacity,
+      color: rm.color, location: rm.location, status: rm.status, remark: rm.remark || '', equipment: rm.equipment || ''
+    }, {onConflict: 'id'});
+    // 尝试更新 sort_order，列不存在则静默失败
+    supabase.from('huiyishi').update({sort_order: sortOrder}).eq('id', rm.id).catch(() => {});
+  } catch(e){ console.warn('cloudUpsertRoom error:', e); }
+}
+
+async function cloudDeleteRoom(id){
+  if(!supabaseReady) return;
+  try { await supabase.from('huiyishi').delete().eq('id', id); } catch(e){ console.warn('cloudDeleteRoom error:', e); }
+}
+
+/* ---- Realtime Subscription ---- */
+function startRealtime(){
+  if(!supabase) return;
+  realtimeChannel = supabase
+    .channel('meeting-room-realtime')
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'bookings'}, (payload) => {
+      const b = payload.new;
+      const exists = bookings.find(x => x.id === b.id);
+      if(!exists){
+        bookings.unshift({id: b.id, roomId: b.room_id, startTime: b.start_time, endTime: b.end_time, person: b.person, department: b.department||'', reason: b.reason, createdAt: b.created_at});
+        localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+        onRemoteChange('booking_insert');
+      }
+    })
+    .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'bookings'}, (payload) => {
+      const old = bookings.find(x => x.id === payload.old.id);
+      if(old){
+        bookings = bookings.filter(x => x.id !== payload.old.id);
+        localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+        onRemoteChange('booking_delete');
+      }
+    })
+    .on('postgres_changes', {event: 'UPDATE', schema: 'public', table: 'bookings'}, (payload) => {
+      const b = payload.new;
+      const idx = bookings.findIndex(x => x.id === b.id);
+      if(idx !== -1){
+        bookings[idx] = {id: b.id, roomId: b.room_id, startTime: b.start_time, endTime: b.end_time, person: b.person, department: b.department||'', reason: b.reason, createdAt: b.created_at};
+        localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+        onRemoteChange('booking_update');
+      }
+    })
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'huiyishi'}, (payload) => {
+      const r = payload.new;
+      const exists = rooms.find(x => x.id === r.id);
+      if(!exists){
+        rooms.push({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || ''});
+        localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+        onRemoteChange('room_insert');
+      }
+    })
+    .on('postgres_changes', {event: 'UPDATE', schema: 'public', table: 'huiyishi'}, (payload) => {
+      const r = payload.new;
+      const rm = rooms.find(x => x.id === r.id);
+      if(rm){
+        rm.name = r.name; rm.capacity = r.capacity; rm.color = r.color; rm.location = r.location; rm.status = r.status; rm.remark = r.remark || '';
+        localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+        onRemoteChange('room_update');
+      }
+    })
+    .on('postgres_changes', {event: 'DELETE', schema: 'public', table: 'huiyishi'}, (payload) => {
+      const old = rooms.find(x => x.id === payload.old.id);
+      if(old){
+        rooms = rooms.filter(x => x.id !== payload.old.id);
+        localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+        onRemoteChange('room_delete');
+      }
+    })
+    .subscribe((status) => {
+      if(status === 'SUBSCRIBED'){
+        console.log('[Realtime] 订阅成功');
+        updateCloudStatus('online');
+      }
+      else if(status === 'CHANNEL_ERROR'){
+        console.warn('[Realtime] 频道错误，5秒后重连...');
+        updateCloudStatus('offline');
+        setTimeout(startRealtime, 5000);
+      }
+      else if(status === 'TIMED_OUT'){
+        console.warn('[Realtime] 连接超时，5秒后重连...');
+        setTimeout(startRealtime, 5000);
+      }
+      else if(status === 'CLOSED'){
+        console.warn('[Realtime] 连接关闭，5秒后重连...');
+        setTimeout(startRealtime, 5000);
+      }
+    });
+}
+
+/* ---- Manual Refresh ---- */
+async function manualRefresh(){
+  if(!supabaseReady){ toast('⚠️ 未连接云端','warn'); return; }
+  const btn = document.getElementById('refreshBtn');
+  btn.textContent = '⏳ 同步中...';
+  btn.disabled = true;
+  updateCloudStatus('syncing');
+  try {
+    await loadAllFromCloud();
+    // 重新渲染当前页面
+    if(currentTab === 'dashboard') renderDashboard();
+    else if(currentTab === 'booking') render();
+    else if(currentTab === 'history') renderHistory();
+    else if(currentTab === 'stats') renderStats();
+    else if(currentTab === 'admin') renderRoomConfigList();
+    toast('✅ 已从云端同步最新数据','ok');
+  } catch(e){
+    toast('❌ 同步失败: ' + (e.message || '未知错误'), 'warn');
+  }
+  btn.textContent = '🔄 同步';
+  btn.disabled = false;
+}
+
+let _remoteChangeTimer = null;
+function onRemoteChange(type){
+  updateCloudStatus('syncing');
+  if(currentTab === 'dashboard') renderDashboard();
+  else if(currentTab === 'booking') render();
+  else if(currentTab === 'history') renderHistory();
+  else if(currentTab === 'stats') renderStats();
+  else if(currentTab === 'admin') renderRoomConfigList();
+  if(_remoteChangeTimer) clearTimeout(_remoteChangeTimer);
+  _remoteChangeTimer = setTimeout(()=>{
+    updateCloudStatus('online');
+    toast('🔄 数据已同步更新', 'warn');
+    _remoteChangeTimer = null;
+  }, 800);
+}
+
+/* ---- Utils ---- */
+function uid(){ return 'b'+ Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6); }
+const pad = n => String(n).padStart(2,'0');
+function fmtDT(iso){
+  const d=new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fmtD(d){
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function fmtDCN(d){
+  const ws=['日','一','二','三','四','五','六'];
+  return `${d.getFullYear()}年${pad(d.getMonth()+1)}月${pad(d.getDate())}日  周${ws[d.getDay()]}`;
+}
+function sameDay(iso, d){
+  const a=new Date(iso);
+  return a.getFullYear()===d.getFullYear()&&a.getMonth()===d.getMonth()&&a.getDate()===d.getDate();
+}
+function roomById(id){ return rooms.find(r=>r.id===id); }
+function isBusyNow(rid){
+  const now=Date.now();
+  return bookings.some(b=>b.roomId===rid&&new Date(b.startTime)<=now&&new Date(b.endTime)>=now);
+}
+
+/* ---- Conflict Check ---- */
+function checkConflict(roomId, sISO, eISO, excludeId=null){
+  const s=new Date(sISO).getTime(), e=new Date(eISO).getTime();
+  return bookings.find(b=>{
+    if(b.id===excludeId||b.roomId!==roomId) return false;
+    const bs=new Date(b.startTime).getTime(), be=new Date(b.endTime).getTime();
+    return s<be && e>bs;
+  });
+}
+
+/* ---- Toast ---- */
+function toast(msg,type='ok'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.animation='tsOut .3s ease forwards';setTimeout(()=>t.remove(),300);},3600);
+}
+
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---- Equipment Utilities ---- */
+function parseEquipment(eq){
+  if(Array.isArray(eq)) return eq;
+  try { const p = JSON.parse(eq); return Array.isArray(p) ? p : []; }
+  catch { return []; }
+}
+
+function equipIcons(eq){
+  const arr = parseEquipment(eq);
+  if(arr.length === 0) return '';
+  const icons = arr.map(n => {
+    const f = EQUIPMENT_PRESETS.find(e => e.name === n);
+    return f ? f.icon : '🔧';
+  });
+  if(icons.length <= 3) return icons.join('');
+  return icons.slice(0,3).join('') + `<span class="eq-overflow">+${icons.length-3}</span>`;
+}
+
+function equipTags(eq){
+  const arr = parseEquipment(eq);
+  if(arr.length === 0) return '';
+  return arr.map(n => {
+    const f = EQUIPMENT_PRESETS.find(e => e.name === n);
+    const ic = f ? f.icon : '🔧';
+    return `<span class="eq-tag">${ic} ${escHtml(n)}</span>`;
+  }).join('');
+}
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+function switchTab(tab){
+  // Admin guard
+  if(tab === 'admin' && !isAdmin){
+    openAdminLogin();
+    return;
+  }
+
+  currentTab = tab;
+
+  // Update tab bar
+  document.querySelectorAll('.tab-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+
+  // Switch pages
+  document.querySelectorAll('.page').forEach(el => {
+    el.classList.remove('active');
+  });
+  document.getElementById('page-' + tab).classList.add('active');
+
+  // Render page content
+  if(tab === 'dashboard') renderDashboard();
+  else if(tab === 'booking') render();
+  else if(tab === 'history') { histPage = 1; renderHistory(); }
+  else if(tab === 'stats') renderStats();
+  else if(tab === 'admin') renderRoomConfigList();
+}
+
+/* ============================================================
+   DASHBOARD PAGE
+   ============================================================ */
+function renderDashboard(){
+  const now = new Date();
+  const todayBk = bookings.filter(b => sameDay(b.startTime, now));
+  const busyNow = rooms.filter(r => isBusyNow(r.id)).length;
+  const activeRooms = rooms.filter(r => r.status !== 'maintenance').length;
+  const totalCapacity = rooms.reduce((s,r) => s + r.capacity, 0);
+
+  // Stats cards
+  document.getElementById('dashStats').innerHTML = `
+    <div class="dash-card">
+      <div class="dc-icon" style="background:#e8f1ff">🏢</div>
+      <div class="dc-info"><div class="dc-val" style="color:var(--pri)">${activeRooms}</div><div class="dc-label">可用会议室</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon" style="background:#f0fff4">📊</div>
+      <div class="dc-info"><div class="dc-val" style="color:var(--ok)">${busyNow}</div><div class="dc-label">正在使用</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon" style="background:#fffbe6">📅</div>
+      <div class="dc-info"><div class="dc-val" style="color:var(--warn)">${todayBk.length}</div><div class="dc-label">今日预约</div></div>
+    </div>
+    <div class="dash-card">
+      <div class="dc-icon" style="background:#f9f0ff">👥</div>
+      <div class="dc-info"><div class="dc-val" style="color:#722ed1">${totalCapacity}</div><div class="dc-label">总容纳人数</div></div>
+    </div>
+  `;
+
+  // Room status list
+  const dashRoomsEl = document.getElementById('dashRooms');
+  if(!rooms.length){
+    dashRoomsEl.innerHTML = '<div class="empty"><div class="empty-ic">📭</div><p>暂无会议室</p></div>';
+  } else {
+    dashRoomsEl.innerHTML = rooms.map(rm => {
+      let statusClass, statusText;
+      if(rm.status === 'maintenance'){
+        statusClass = 'maint'; statusText = '维护中';
+      } else if(isBusyNow(rm.id)){
+        statusClass = 'busy'; statusText = '使用中';
+      } else {
+        statusClass = 'free'; statusText = '空闲';
+      }
+      return `
+        <div class="qroom-row" onclick="switchTab('booking')">
+          <div class="qroom-dot" style="background:${rm.color}"></div>
+          <div class="qroom-info">
+            <div class="qroom-name">${escHtml(rm.name)}</div>
+            <div class="qroom-meta">≤${rm.capacity}人 · ${escHtml(rm.location)}</div>
+            ${rm.equipment ? `<div class="eq-tags" style="margin-top:2px">${equipTags(rm.equipment)}</div>` : ''}
+          </div>
+          <span class="qroom-status ${statusClass}">${statusText}</span>
+        </div>`;
+    }).join('');
+  }
+
+  // Today's bookings list
+  const dashBkEl = document.getElementById('dashBookings');
+  const upcoming = todayBk
+    .filter(b => new Date(b.endTime) >= now)
+    .sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+
+  if(!upcoming.length){
+    dashBkEl.innerHTML = '<div class="empty"><div class="empty-ic">📭</div><p>今日暂无待进行预约</p></div>';
+  } else {
+    dashBkEl.innerHTML = upcoming.slice(0, 5).map(b => {
+      const rm = roomById(b.roomId);
+      const st = new Date(b.startTime), et = new Date(b.endTime);
+      const ts = `${pad(st.getHours())}:${pad(st.getMinutes())} — ${pad(et.getHours())}:${pad(et.getMinutes())}`;
+      const isCurrent = new Date(b.startTime) <= now && new Date(b.endTime) >= now;
+      return `
+        <div class="qbk-row" onclick="openDetail('${b.id}')">
+          <div class="qbk-dot" style="background:${rm?.color||'#ccc'}"></div>
+          <div class="qbk-info">
+            <div class="qbk-top">
+              <span class="qbk-rn">${escHtml(rm?.name||'未知')}</span>
+              <span class="qbk-time">${isCurrent?'🔴':'🕐'} ${ts}</span>
+            </div>
+            <div class="qbk-sub">👤 ${escHtml(b.person)}${b.department ? ' · 🏢 '+escHtml(b.department) : ''} · ${escHtml(b.reason)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Timeline chart
+  renderDashTimeline();
+
+}
+
+/* ---- Dashboard Timeline ---- */
+const TL_S = 7, TL_E = 22; // 时间轴 7:00 ~ 22:00
+
+function renderDashTimeline(){
+  var el = document.getElementById('dashTimeline');
+  var now = new Date();
+  var todayBk = bookings.filter(function(b){ return sameDay(b.startTime, now); });
+  var activeRooms = rooms.filter(function(r){ return r.status !== 'maintenance'; });
+
+  if(!activeRooms.length){
+    el.innerHTML = '<div class="dash-tl-empty">暂无可用会议室</div>';
+    return;
+  }
+
+  var tot = TL_E - TL_S;
+  var totMin = tot * 60;
+  var isToday = fmtD(now) === fmtD(new Date());
+
+  // 小时刻度（与track对齐：纯flex，每个hour占1/tot）
+  var hoursHtml = '';
+  for(var h = TL_S; h < TL_E; h++){
+    hoursHtml += '<div class="dash-tl-hour">' + h + ':00</div>';
+  }
+
+  // 每个会议室一行（grid布局，100px + 1fr，与header对齐）
+  var rowsHtml = '';
+  activeRooms.forEach(function(rm){
+    // 网格线
+    var grids = '';
+    for(var i = 1; i < tot; i++){
+      grids += '<div class="dash-tl-grid" style="left:' + ((i/tot)*100).toFixed(2) + '%"></div>';
+    }
+    // 当前时间线
+    var nowLine = '';
+    if(isToday){
+      var nowMin = (now.getHours() - TL_S) * 60 + now.getMinutes();
+      if(nowMin >= 0 && nowMin <= totMin){
+        nowLine = '<div class="dash-tl-now" style="left:' + ((nowMin/totMin)*100).toFixed(2) + '%"></div>';
+      }
+    }
+    // 预约块
+    var roomBk = todayBk.filter(function(b){ return b.roomId === rm.id; });
+    var bars = '';
+    roomBk.forEach(function(b){
+      var bs = new Date(b.startTime), be = new Date(b.endTime);
+      var bsM = (bs.getHours() - TL_S) * 60 + bs.getMinutes();
+      var beM = (be.getHours() - TL_S) * 60 + be.getMinutes();
+      var left = Math.max(0, (bsM / totMin) * 100);
+      var width = Math.min(100 - left, ((beM - bsM) / totMin) * 100);
+      if(width < 0.5) return;
+      var lbl = pad(bs.getHours()) + ':' + pad(bs.getMinutes()) + ' ' + b.person;
+      bars += '<div class="dash-tl-bar" style="left:' + left.toFixed(2) + '%;width:' + Math.max(width,1.2).toFixed(2) + '%;background:' + rm.color + '" '
+        + 'onclick="openDetail(\'' + b.id + '\')" title="' + escHtml(b.reason) + ' (' + lbl + ')">'
+        + escHtml(lbl) + '</div>';
+    });
+
+    rowsHtml += '<div class="dash-tl-row">'
+      + '<div class="dash-tl-room" title="' + escHtml(rm.name) + '">' + escHtml(rm.name) + (rm.equipment ? '<br><span style="font-size:9px;color:var(--tx3)">' + equipIcons(rm.equipment) + '</span>' : '') + '</div>'
+      + '<div class="dash-tl-track">' + grids + nowLine + bars + '</div>'
+      + '</div>';
+  });
+
+  // 图例
+  var legendHtml = '<div class="dash-tl-legend">';
+  legendHtml += '<div class="dash-tl-legend-item"><div class="dash-tl-legend-dot" style="background:var(--err)"></div>当前时间</div>';
+  legendHtml += '<div class="dash-tl-legend-item"><div class="dash-tl-legend-dot" style="background:var(--pri);opacity:.6"></div>预约时段</div>';
+  legendHtml += '</div>';
+
+  el.innerHTML = '<div class="dash-tl-grid-wrap">'
+    + '<div class="dash-tl-corner"></div>'
+    + '<div class="dash-tl-header">' + hoursHtml + '</div>'
+    + rowsHtml
+    + legendHtml
+    + '</div>';
+}
+
+/* ============================================================
+   HISTORY PAGE
+   ============================================================ */
+function renderHistoryFilter(){
+  const sel = document.getElementById('histRoomFilter');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">全部会议室</option>';
+  rooms.forEach(r => {
+    const o = document.createElement('option');
+    o.value = r.id;
+    o.textContent = r.name;
+    sel.appendChild(o);
+  });
+  sel.value = prev;
+}
+
+function clearHistFilters(){
+  document.getElementById('histSearch').value = '';
+  document.getElementById('histRoomFilter').value = '';
+  histPage = 1;
+  renderHistory();
+}
+
+function toggleHistSelectMode(){
+  histSelectMode = !histSelectMode;
+  if(!histSelectMode) cancelHistSelect();
+  renderHistory();
+}
+
+function cancelHistSelect(){
+  histSelectMode = false;
+  histSelectedIds.clear();
+  document.getElementById('histBatchBar').style.display = 'none';
+  document.getElementById('histCheckAll').checked = false;
+  document.getElementById('histBatchCount').textContent = '已选 0 条';
+  document.getElementById('histMultiBtn').textContent = '☑️ 多选';
+  renderHistory();
+}
+
+function toggleHistItem(id){
+  if(histSelectedIds.has(id)) histSelectedIds.delete(id);
+  else histSelectedIds.add(id);
+  updateBatchBar();
+}
+
+function toggleHistSelectAll(checked){
+  // 获取当前页可见的 filtered items
+  const pageIds = document.querySelectorAll('.hist-card[data-id]');
+  pageIds.forEach(el => {
+    const id = el.dataset.id;
+    if(checked) histSelectedIds.add(id);
+    else histSelectedIds.delete(id);
+  });
+  updateBatchBar();
+}
+
+function updateBatchBar(){
+  const count = histSelectedIds.size;
+  document.getElementById('histBatchCount').textContent = '已选 ' + count + ' 条';
+  document.getElementById('histBatchBar').style.display = histSelectMode ? 'flex' : 'none';
+  // 更新全选 checkbox 状态
+  const pageIds = document.querySelectorAll('.hist-card[data-id]');
+  const allChecked = pageIds.length > 0 && Array.from(pageIds).every(el => histSelectedIds.has(el.dataset.id));
+  document.getElementById('histCheckAll').checked = allChecked;
+  // 更新每张卡片的 checkbox
+  pageIds.forEach(el => {
+    const cb = el.querySelector('.hist-check');
+    if(cb) cb.checked = histSelectedIds.has(el.dataset.id);
+  });
+}
+
+function batchHideBookings(){
+  if(histSelectedIds.size === 0){ toast('请先勾选记录','warn'); return; }
+  const count = histSelectedIds.size;
+  histSelectedIds.forEach(id => {
+    if(!hiddenIds.includes(id)) hiddenIds.push(id);
+  });
+  saveHiddenToCloud();
+  histSelectedIds.clear();
+  cancelHistSelect();
+  toast('已从记录中移除 ' + count + ' 条','ok');
+  renderHistory();
+}
+
+function renderHistory(){
+  renderHistoryFilter();
+  const search = (document.getElementById('histSearch').value || '').trim().toLowerCase();
+  const roomFilter = document.getElementById('histRoomFilter').value;
+
+  let filtered = [...bookings];
+  // 过滤掉用户已隐藏的记录
+  filtered = filtered.filter(b => !hiddenIds.includes(b.id));
+  if(roomFilter) filtered = filtered.filter(b => b.roomId === roomFilter);
+  if(search){
+    filtered = filtered.filter(b => {
+      const rm = roomById(b.roomId);
+      return (rm?.name||'').toLowerCase().includes(search)
+        || b.person.toLowerCase().includes(search)
+        || (b.department||'').toLowerCase().includes(search)
+        || b.reason.toLowerCase().includes(search);
+    });
+  }
+
+  // Sort by start time descending
+  filtered.sort((a,b) => new Date(b.startTime) - new Date(a.startTime));
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / HIST_PER_PAGE));
+  if(histPage > totalPages) histPage = totalPages;
+  const start = (histPage - 1) * HIST_PER_PAGE;
+  const pageItems = filtered.slice(start, start + HIST_PER_PAGE);
+
+  const el = document.getElementById('histList');
+  if(!pageItems.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ic">📭</div><p>暂无预约记录</p></div>';
+  } else {
+    el.innerHTML = pageItems.map(b => {
+      const rm = roomById(b.roomId);
+      const st = new Date(b.startTime), et = new Date(b.endTime);
+      const ts = `${pad(st.getHours())}:${pad(st.getMinutes())} — ${pad(et.getHours())}:${pad(et.getMinutes())}`;
+      const checked = histSelectedIds.has(b.id);
+      return `
+        <div class="hist-card${histSelectMode ? ' select-mode' : ''}" style="border-left-color:${rm?.color||'#ccc'}" data-id="${b.id}" onclick="${histSelectMode ? 'toggleHistItem(\''+b.id+'\')' : 'openDetail(\''+b.id+'\')'}">
+          ${histSelectMode ? `<input type="checkbox" class="hist-check" ${checked?'checked':''} onclick="event.stopPropagation();toggleHistItem('${b.id}')"/>` : ''}
+          <div class="hc-date">
+            <div class="hc-day">${pad(st.getDate())}</div>
+            <div class="hc-month">${st.getFullYear()}-${pad(st.getMonth()+1)}</div>
+          </div>
+          <div class="hc-info">
+            <div class="hc-top">
+              <span class="hc-room"><span class="hc-room-dot" style="background:${rm?.color||'#ccc'}"></span>${escHtml(rm?.name||'未知会议室')}</span>
+              <span class="hc-time">🕐 ${ts}</span>
+            </div>
+            <div class="hc-sub">
+              <span>👤 ${escHtml(b.person)}</span>
+              ${b.department ? `<span>🏢 ${escHtml(b.department)}</span>` : ''}
+              <span>📝 ${escHtml(b.reason)}</span>
+            </div>
+          </div>
+          ${histSelectMode ? '' : `<button class="hc-del" title="从记录中移除" onclick="event.stopPropagation();hideBooking('${b.id}')">🗑️</button>`}
+        </div>`;
+    }).join('');
+  }
+
+  // Pager
+  const pagerEl = document.getElementById('histPager');
+  if(filtered.length > HIST_PER_PAGE){
+    pagerEl.innerHTML = `
+      <button onclick="histPage=Math.max(1,histPage-1);renderHistory()" ${histPage<=1?'disabled':''}>上一页</button>
+      <span class="page-info">${histPage} / ${totalPages}（共${filtered.length}条）</span>
+      <button onclick="histPage=Math.min(${totalPages},histPage+1);renderHistory()" ${histPage>=totalPages?'disabled':''}>下一页</button>
+    `;
+  } else {
+    pagerEl.innerHTML = filtered.length > 0
+      ? `<span class="page-info">共${filtered.length}条记录</span>`
+      : '';
+  }
+
+  // 多选模式下更新批量操作栏
+  if(histSelectMode) updateBatchBar();
+}
+
+/* ============================================================
+   STATISTICS PAGE
+   ============================================================ */
+function getStatsBookings(){
+  const days = parseInt(document.getElementById('statsPeriod').value) || 0;
+  const now = Date.now();
+  return bookings.filter(b => {
+    if(!b.startTime || !b.endTime) return false;
+    if(days === 0) return true;
+    return (now - new Date(b.startTime).getTime()) <= days * 86400000;
+  });
+}
+
+function renderStats(){
+  const bks = getStatsBookings();
+  const totalHours = bks.reduce((s,b) => s + Math.max(0, (new Date(b.endTime)-new Date(b.startTime))/3600000), 0);
+  const avgDur = bks.length > 0 ? (totalHours / bks.length) : 0;
+
+  // Overview cards
+  document.getElementById('statsOverview').innerHTML = `
+    <div class="so-card">
+      <div class="so-icon">📅</div>
+      <div class="so-val" style="color:var(--pri)">${bks.length}</div>
+      <div class="so-label">预约总数</div>
+    </div>
+    <div class="so-card">
+      <div class="so-icon">⏱️</div>
+      <div class="so-val" style="color:var(--ok)">${totalHours.toFixed(1)}</div>
+      <div class="so-label">累计使用时长(h)</div>
+    </div>
+    <div class="so-card">
+      <div class="so-icon">📊</div>
+      <div class="so-val" style="color:var(--warn)">${avgDur.toFixed(1)}</div>
+      <div class="so-label">平均时长(h/次)</div>
+    </div>
+    <div class="so-card">
+      <div class="so-icon">👥</div>
+      <div class="so-val" style="color:#722ed1">${new Set(bks.map(b=>b.person)).size}</div>
+      <div class="so-label">预约人数</div>
+    </div>
+  `;
+
+  renderStatsTrend(bks);
+  renderStatsRoomRank(bks);
+  renderStatsTimeSlot(bks);
+  renderStatsDeptRank(bks);
+}
+
+/* -- Daily Trend -- */
+function renderStatsTrend(bks){
+  const el = document.getElementById('statsTrend');
+  if(!bks.length){ el.innerHTML = '<div class="st-empty">暂无数据</div>'; return; }
+
+  // Group by date
+  const dateMap = {};
+  bks.forEach(b => {
+    const d = fmtD(new Date(b.startTime));
+    if(!dateMap[d]) dateMap[d] = {count:0, hours:0};
+    dateMap[d].count++;
+    dateMap[d].hours += Math.max(0, (new Date(b.endTime)-new Date(b.startTime))/3600000);
+  });
+
+  const days = parseInt(document.getElementById('statsPeriod').value) || 0;
+  const dayCount = Math.min(days || 30, 30);
+  const dates = [];
+  for(let i = dayCount-1; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    dates.push(fmtD(d));
+  }
+
+  const maxCount = Math.max(1, ...dates.map(d => (dateMap[d]||{count:0}).count));
+  const maxH = 140;
+
+  let html = '<div class="st-trend-wrap"><div class="st-trend-zero"></div>';
+  dates.forEach((d, idx) => {
+    const info = dateMap[d] || {count:0};
+    const h = Math.max(2, (info.count / maxCount) * maxH);
+    const isToday = d === fmtD(new Date());
+    const color = isToday ? 'var(--pri)' : 'var(--pri)';
+    const opacity = isToday ? '1' : '0.6';
+    const showDate = dates.length <= 14 || idx % Math.ceil(dates.length/14) === 0 || isToday;
+    html += `<div class="st-trend-col" title="${d}: ${info.count}次预约, ${info.hours.toFixed(1)}h">
+      <div class="st-trend-val">${info.count || ''}</div>
+      <div class="st-trend-bar" style="height:${h}px;background:${color};opacity:${opacity}" onclick="quickFilterDate('${d}')"></div>
+      ${showDate ? `<div class="st-trend-date">${d.slice(5)}</div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function quickFilterDate(dateStr){
+  chartDate = new Date(dateStr + 'T00:00:00');
+  switchTab('booking');
+}
+
+/* -- Room Usage Ranking -- */
+function renderStatsRoomRank(bks){
+  const el = document.getElementById('statsRoomRank');
+  if(!bks.length){ el.innerHTML = '<div class="st-empty">暂无数据</div>'; return; }
+
+  const roomMap = {};
+  bks.forEach(b => {
+    const rm = roomById(b.roomId);
+    const name = rm ? rm.name : '未知';
+    if(!roomMap[name]) roomMap[name] = {count:0, hours:0, color: rm?.color||'#ccc'};
+    roomMap[name].count++;
+    roomMap[name].hours += Math.max(0, (new Date(b.endTime)-new Date(b.startTime))/3600000);
+  });
+
+  const sorted = Object.entries(roomMap).sort((a,b) => b[1].hours - a[1].hours);
+  const maxH = Math.max(1, ...sorted.map(([,v]) => v.hours));
+
+  let html = '<div class="st-bar-wrap">';
+  sorted.forEach(([name, data]) => {
+    const pct = (data.hours / maxH * 100).toFixed(1);
+    html += `<div class="st-bar-row" title="${name}: ${data.count}次, ${data.hours.toFixed(1)}h">
+      <div class="st-bar-label" title="${escHtml(name)}">${escHtml(name)}</div>
+      <div class="st-bar-track">
+        <div class="st-bar-fill" style="width:${pct}%;background:${data.color}">
+          <span class="st-bar-val">${data.hours.toFixed(1)}h</span>
+        </div>
+      </div>
+      <div class="st-bar-pct">${data.count}次</div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* -- Time Slot Distribution -- */
+function renderStatsTimeSlot(bks){
+  const el = document.getElementById('statsTimeSlot');
+  if(!bks.length){ el.innerHTML = '<div class="st-empty">暂无数据</div>'; return; }
+
+  const slots = {};
+  for(let h = 7; h <= 21; h++){
+    const key = `${pad(h)}:00-${pad(h+1)}:00`;
+    slots[key] = 0;
+  }
+
+  bks.forEach(b => {
+    const s = new Date(b.startTime), e = new Date(b.endTime);
+    for(let h = s.getHours(); h < e.getHours() && h <= 21; h++){
+      if(h < 7) continue;
+      const key = `${pad(h)}:00-${pad(h+1)}:00`;
+      if(slots[key] !== undefined) slots[key]++;
+    }
+  });
+
+  const maxCount = Math.max(1, ...Object.values(slots));
+  let html = '<div class="st-slot-wrap">';
+  Object.entries(slots).forEach(([slot, count]) => {
+    const active = count > 0;
+    html += `<div class="st-slot-cell${active?' active':''}" title="${slot}: ${count}次预约">
+      <div class="st-slot-time">${slot.split('-')[0]}</div>
+      <div class="st-slot-count" style="color:${active?'var(--pri)':'var(--tx3)'}">${count}</div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* -- Department Ranking -- */
+function renderStatsDeptRank(bks){
+  const el = document.getElementById('statsDeptRank');
+  const deptBks = bks.filter(b => b.department);
+  if(!deptBks.length){ el.innerHTML = '<div class="st-empty">暂无部门预约数据</div>'; return; }
+
+  const deptMap = {};
+  deptBks.forEach(b => {
+    const d = b.department || '未填写';
+    if(!deptMap[d]) deptMap[d] = 0;
+    deptMap[d]++;
+  });
+
+  const sorted = Object.entries(deptMap).sort((a,b) => b[1] - a[1]);
+  const maxCount = Math.max(1, ...sorted.map(([,v]) => v));
+
+  let html = '<div class="st-bar-wrap">';
+  sorted.forEach(([dept, count]) => {
+    const pct = (count / maxCount * 100).toFixed(1);
+    html += `<div class="st-bar-row" title="${escHtml(dept)}: ${count}次预约">
+      <div class="st-bar-label" title="${escHtml(dept)}">${escHtml(dept)}</div>
+      <div class="st-bar-track">
+        <div class="st-bar-fill" style="width:${pct}%;background:var(--pri)">
+          <span class="st-bar-val">${count}</span>
+        </div>
+      </div>
+      <div class="st-bar-pct">${pct}%</div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ============================================================
+   EMAIL NOTIFICATION (via Supabase Edge Function)
+   ============================================================ */
+function sendBookingNotify(bk, isNew){
+  // 邮件通知已由 WorkBuddy 自动化任务接管，此处保留接口供未来扩展
+  console.log('[notify] 预约通知:', isNew ? '新建' : '修改', bk);
+}
+
+/* ============================================================
+   BOOKING REMINDER (Browser Notification)
+   ============================================================ */
+const REMINDER_AHEAD = 15; // 提前 15 分钟提醒
+let _reminderTimer = null;
+let _remindedSet = new Set(); // 已提醒的预约 ID，避免重复
+const SK_REMINDER_OPT = 'mrb_reminder_opt_v1';
+
+function requestNotifyPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  // 检查用户是否已拒绝过（360极速浏览器等可能不会持久化denied状态）
+  var savedOpt = localStorage.getItem(SK_REMINDER_OPT);
+  if(savedOpt === 'denied') return false;
+  if(savedOpt === 'skip') return false;
+  // 首次调用，弹窗请求权限
+  Notification.requestPermission().then(function(perm){
+    if(perm === 'granted'){
+      localStorage.setItem(SK_REMINDER_OPT, 'granted');
+    } else if(perm === 'denied'){
+      localStorage.setItem(SK_REMINDER_OPT, 'denied');
+    }
+    // 如果用户关闭弹窗不选择(perm === 'default')，不记录，下次再问
+  });
+  return false;
+}
+
+function startReminder(){
+  if(_reminderTimer) return;
+  // 立即检查一次
+  checkReminders();
+  // 每 60 秒检查一次
+  _reminderTimer = setInterval(checkReminders, 60000);
+}
+
+function checkReminders(){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const now = Date.now();
+  const ahead = REMINDER_AHEAD * 60 * 1000;
+
+  bookings.forEach(b => {
+    if(_remindedSet.has(b.id)) return;
+    const start = new Date(b.startTime).getTime();
+    // 在提前 N 分钟到开始时间之间触发
+    if(start - now > 0 && start - now <= ahead){
+      _remindedSet.add(b.id);
+      const rm = roomById(b.roomId);
+      const minsLeft = Math.ceil((start - now) / 60000);
+      const title = minsLeft <= 1 ? `📢 会议即将开始！` : `📅 会议将在 ${minsLeft} 分钟后开始`;
+      const body = `${rm?.name||'会议室'} · ${fmtDT(b.startTime)}\n👤 ${b.person} · ${b.reason}`;
+      try {
+        new Notification(title, {
+          body: body,
+          icon: 'LOGO.png',
+          tag: b.id, // 同一条通知只显示一个
+          requireInteraction: false
+        });
+      } catch(e){ console.warn('Notification error:', e); }
+    }
+  });
+}
+
+/* ---- Export Bookings ---- */
+function toggleExportMenu(){
+  const menu = document.getElementById('exportMenu');
+  menu.classList.toggle('show');
+}
+// 点击外部关闭导出菜单
+document.addEventListener('click', function(e){
+  const dd = document.getElementById('exportDropdown');
+  if(dd && !dd.contains(e.target)){
+    document.getElementById('exportMenu').classList.remove('show');
+  }
+});
+
+async function exportBookings(format){
+  document.getElementById('exportMenu').classList.remove('show');
+
+  // 复用当前筛选条件
+  const search = (document.getElementById('histSearch').value || '').trim().toLowerCase();
+  const roomFilter = document.getElementById('histRoomFilter').value;
+  let filtered = [...bookings];
+  filtered = filtered.filter(b => !hiddenIds.includes(b.id));
+  if(roomFilter) filtered = filtered.filter(b => b.roomId === roomFilter);
+  if(search){
+    filtered = filtered.filter(b => {
+      const rm = roomById(b.roomId);
+      return (rm?.name||'').toLowerCase().includes(search)
+        || b.person.toLowerCase().includes(search)
+        || (b.department||'').toLowerCase().includes(search)
+        || b.reason.toLowerCase().includes(search);
+    });
+  }
+  filtered.sort((a,b) => new Date(a.startTime) - new Date(b.startTime));
+
+  if(!filtered.length){
+    return toast('没有可导出的记录', 'warn');
+  }
+
+  // 构建数据行
+  const rows = filtered.map(b => {
+    const rm = roomById(b.roomId);
+    const st = new Date(b.startTime), et = new Date(b.endTime);
+    return {
+      '日期': fmtD(st),
+      '开始时间': `${pad(st.getHours())}:${pad(st.getMinutes())}`,
+      '结束时间': `${pad(et.getHours())}:${pad(et.getMinutes())}`,
+      '会议室': rm?.name || '-',
+      '位置': rm?.location || '-',
+      '容纳人数': rm?.capacity || '-',
+      '预约人': b.person,
+      '部门/单位': b.department || '-',
+      '事由': b.reason,
+      '创建时间': fmtDT(b.createdAt)
+    };
+  });
+
+  if(format === 'csv'){
+    exportCSV(rows);
+  } else {
+    await exportXLSX(rows);
+  }
+}
+
+function exportCSV(rows){
+  const headers = Object.keys(rows[0]);
+  const csvRows = [headers.join(',')];
+  rows.forEach(row => {
+    csvRows.push(headers.map(h => {
+      let v = String(row[h] ?? '');
+      if(v.includes(',') || v.includes('"') || v.includes('\n')){
+        v = '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    }).join(','));
+  });
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvRows.join('\n')], {type:'text/csv;charset=utf-8'});
+  downloadBlob(blob, `预约记录_${fmtD(new Date())}.csv`);
+  toast(`已导出 ${rows.length} 条记录 (CSV)`, 'ok');
+}
+
+async function exportXLSX(rows){
+  if(!window.XLSX){
+    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+  }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  // 设置列宽
+  ws['!cols'] = [
+    {wch:12}, {wch:10}, {wch:10}, {wch:16}, {wch:14}, {wch:10}, {wch:10}, {wch:20}, {wch:24}, {wch:18}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '预约记录');
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  downloadBlob(blob, `预约记录_${fmtD(new Date())}.xlsx`);
+  toast(`已导出 ${rows.length} 条记录 (Excel)`, 'ok');
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   BOOKING PAGE (existing logic)
+   ============================================================ */
+
+/* ---- Form ---- */
+function initDeptSelect(){
+  const sel = document.getElementById('fDept');
+  if(!sel || sel.options.length > 1) return; // 已初始化
+  DEPARTMENTS.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    sel.appendChild(o);
+  });
+}
+
+function initFormDefaults(){
+  const now=new Date();
+  const round=d=>{
+    const c=new Date(d), m=c.getMinutes();
+    const rm=Math.ceil(m/30)*30;
+    c.setMinutes(rm,0,0);
+    if(rm===60){c.setHours(c.getHours()+1);c.setMinutes(0);}
+    return c;
+  };
+  const s=round(now), e=new Date(s.getTime()+3600000);
+  const toL=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  document.getElementById('fStart').value=toL(s);
+  document.getElementById('fEnd').value=toL(e);
+  document.getElementById('fPerson').value=currentUser;
+}
+
+function handleSubmit(){
+  const roomId=document.getElementById('fRoom').value;
+  const start=document.getElementById('fStart').value;
+  const end=document.getElementById('fEnd').value;
+  const person=document.getElementById('fPerson').value.trim();
+  const department=document.getElementById('fDept').value;
+  const reason=document.getElementById('fReason').value.trim();
+
+  if(!roomId) return toast('请选择会议室','warn');
+  if(!start)  return toast('请选择开始时间','warn');
+  if(!end)    return toast('请选择结束时间','warn');
+  if(!person) return toast('请填写预约人','warn');
+  if(!department) return toast('请选择部门/单位','warn');
+  if(!reason) return toast('请填写会议事由','warn');
+
+  const sISO=new Date(start).toISOString();
+  const eISO=new Date(end).toISOString();
+
+  if(new Date(eISO)<=new Date(sISO)) return toast('结束时间须晚于开始时间','warn');
+  const dur=(new Date(eISO)-new Date(sISO))/60000;
+  if(dur<15) return toast('预约时长至少15分钟','warn');
+  if(dur>480) return toast('单次预约不超过8小时','warn');
+
+  // 冲突检测：编辑模式下排除自身
+  const cf=checkConflict(roomId,sISO,eISO,editingBookingId);
+  if(cf){
+    const rm=roomById(roomId);
+    return toast(`❌ 时间冲突！${rm?.name} 在 ${fmtDT(cf.startTime)}~${fmtDT(cf.endTime)} 已被"${cf.person}"预约`,'err');
+  }
+
+  if(editingBookingId){
+    // 编辑模式：更新已有预约
+    const bk = bookings.find(b=>b.id===editingBookingId);
+    if(bk){
+      bk.roomId=roomId;
+      bk.startTime=sISO;
+      bk.endTime=eISO;
+      bk.person=person;
+      bk.department=department;
+      bk.reason=reason;
+      saveBkgs();
+      cloudUpsertBooking(bk);
+      sendBookingNotify(bk, false);
+      chartDate=new Date(sISO);
+      toast(`✅ 预约已更新！${roomById(roomId)?.name}`,'ok');
+      cancelEdit();
+      render();
+    }
+  } else {
+    // 新建模式
+    const newBk = {id:uid(),roomId,startTime:sISO,endTime:eISO,person,department,reason,createdAt:new Date().toISOString()};
+    bookings.push(newBk);
+    saveBkgs();
+    cloudInsertBooking(newBk);
+    sendBookingNotify(newBk, true);
+
+    document.getElementById('fRoom').value='';
+    document.getElementById('fDept').value='';
+    document.getElementById('fReason').value='';
+    initFormDefaults();
+
+    chartDate=new Date(sISO);
+    toast(`✅ 预约成功！${roomById(roomId)?.name}`,'ok');
+    render();
+  }
+}
+
+/* ---- Edit Booking ---- */
+function startEditBooking(id){
+  const b=bookings.find(b=>b.id===id);
+  if(!b) return;
+  if(b.person !== currentUser && !isAdmin) return toast('⚠️ 只能编辑自己提交的预约','warn');
+  closeDetail();
+  editingBookingId=id;
+  // 切换到预约页面
+  switchTab('booking');
+  // 填充表单
+  setTimeout(()=>{
+    document.getElementById('fRoom').value=b.roomId;
+    const toL=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    document.getElementById('fStart').value=toL(new Date(b.startTime));
+    document.getElementById('fEnd').value=toL(new Date(b.endTime));
+    document.getElementById('fPerson').value=b.person;
+    document.getElementById('fDept').value=b.department||'';
+    document.getElementById('fReason').value=b.reason;
+    // UI 切换为编辑模式
+    document.getElementById('formTitle').textContent='✏️ 编辑预约';
+    document.getElementById('btnSubmit').textContent='💾 保存修改';
+    document.getElementById('btnCancelEdit').style.display='';
+    document.getElementById('uploadZone').style.display='none';
+    // 滚动到表单
+    document.getElementById('bkForm').scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
+
+function cancelEdit(){
+  editingBookingId=null;
+  document.getElementById('formTitle').textContent='新建预约';
+  document.getElementById('btnSubmit').textContent='✅ 提交预约';
+  document.getElementById('btnCancelEdit').style.display='none';
+  document.getElementById('uploadZone').style.display='';
+  document.getElementById('fRoom').value='';
+  document.getElementById('fDept').value='';
+  document.getElementById('fReason').value='';
+  initFormDefaults();
+  render();
+}
+
+
+
+/* ---- Delete ---- */
+function hideBooking(id){
+  if(!hiddenIds.includes(id)) hiddenIds.push(id);
+  saveHiddenToCloud();
+  closeDetail();
+  toast('已从记录中移除','ok');
+  renderHistory();
+}
+function delBooking(id){
+  const bk = bookings.find(b=>b.id===id);
+  if(bk && bk.person !== currentUser && !isAdmin) return toast('⚠️ 只能删除自己提交的预约','warn');
+  bookings=bookings.filter(b=>b.id!==id);
+  saveBkgs();
+  cloudDeleteBooking(id);
+  closeDetail();
+  toast('预约已删除','ok');
+  // Refresh current page
+  if(currentTab === 'booking') render();
+  else if(currentTab === 'history') renderHistory();
+  else if(currentTab === 'dashboard') renderDashboard();
+}
+
+/* ---- Detail Modal ---- */
+function openDetail(id){
+  const b=bookings.find(b=>b.id===id);
+  if(!b) return;
+  const rm=roomById(b.roomId);
+  delTargetId=id;
+  document.getElementById('mdRows').innerHTML=`
+    <div class="md-r"><span class="md-lbl">会议室</span><span class="md-val">${escHtml(rm?.name||'-')}</span></div>
+    <div class="md-r"><span class="md-lbl">位置</span><span class="md-val">${escHtml(rm?.location||'-')}</span></div>
+    ${rm?.equipment ? `<div class="md-r"><span class="md-lbl">设备</span><span class="md-val">${equipIcons(rm.equipment)} ${escHtml(parseEquipment(rm.equipment).join('、'))}</span></div>` : ''}
+    ${rm?.remark ? `<div class="md-r"><span class="md-lbl">备注</span><span class="md-val" style="font-size:12px;color:var(--tx2)">${escHtml(rm.remark)}</span></div>` : ''}
+    <div class="md-r"><span class="md-lbl">开始</span><span class="md-val">${fmtDT(b.startTime)}</span></div>
+    <div class="md-r"><span class="md-lbl">结束</span><span class="md-val">${fmtDT(b.endTime)}</span></div>
+    <div class="md-r"><span class="md-lbl">预约人</span><span class="md-val">${escHtml(b.person)}</span></div>
+    ${b.department ? `<div class="md-r"><span class="md-lbl">部门/单位</span><span class="md-val">${escHtml(b.department)}</span></div>` : ''}
+    <div class="md-r"><span class="md-lbl">事由</span><span class="md-val">${escHtml(b.reason)}</span></div>
+    <div class="md-r"><span class="md-lbl">创建时间</span><span class="md-val">${fmtDT(b.createdAt)}</span></div>
+  `;
+  const isOwner = (currentUser && b.person === currentUser);
+  const canManage = isOwner || isAdmin;
+  document.getElementById('mdEdit').style.display = canManage ? '' : 'none';
+  document.getElementById('mdDel').style.display = canManage ? '' : 'none';
+  document.getElementById('mdDel').onclick=()=>delBooking(id);
+  document.getElementById('mdEdit').onclick=()=>startEditBooking(id);
+  document.getElementById('detailOv').classList.add('on');
+}
+function closeDetail(){ document.getElementById('detailOv').classList.remove('on'); }
+document.getElementById('detailOv').addEventListener('click',e=>{ if(e.target.id==='detailOv') closeDetail(); });
+
+/* ---- User Panel ---- */
+function openUserPanel(){
+  document.getElementById('uName').value=currentUser;
+  document.getElementById('userPanelTitle').textContent = '👤 用户设置';
+  document.getElementById('userPanelHint').textContent = '修改您的姓名，修改后将自动保存。';
+  document.getElementById('userPanelCancel').style.display = '';
+  document.getElementById('userPanel').classList.add('on');
+}
+function closeUserPanel(){ document.getElementById('userPanel').classList.remove('on'); }
+function saveUser(){
+  const v=document.getElementById('uName').value.trim();
+  if(!v) return toast('请输入姓名','warn');
+  currentUser=v; saveUsr();
+  document.getElementById('navName').textContent=currentUser;
+  document.getElementById('navAvatar').textContent=currentUser.charAt(0);
+  document.getElementById('fPerson').value=currentUser;
+  closeUserPanel();
+  toast(`欢迎，${currentUser}！`,'ok');
+  // 加载该用户的云端隐藏记录
+  loadHiddenFromCloud();
+  // 如果是首次设置，继续初始化系统
+  if(!window._uiReady){
+    window._uiReady = true;
+    checkAdminSession();
+    updateAdminUI();
+    renderDashboard();
+    startGanttTimer();
+    startAutoSync();
+    requestNotifyPermission();
+    startReminder();
+  }
+}
+document.getElementById('userPanel').addEventListener('click',e=>{ if(e.target.id==='userPanel') closeUserPanel(); });
+document.getElementById('uName').addEventListener('keydown',function(e){ if(e.key==='Enter') saveUser(); });
+
+/* ---- Date Nav ---- */
+function ganttPrev(){
+  if(ganttViewMode==='day') chartDate=new Date(chartDate.getTime()-86400000);
+  else chartDate=new Date(chartDate.getTime()-7*86400000);
+  render();
+}
+function ganttNext(){
+  if(ganttViewMode==='day') chartDate=new Date(chartDate.getTime()+86400000);
+  else chartDate=new Date(chartDate.getTime()+7*86400000);
+  render();
+}
+function goToday(){ chartDate=new Date(); render(); }
+function moveDate(d){ chartDate=new Date(chartDate.getTime()+d*86400000); render(); }
+function setGanttView(mode){
+  ganttViewMode=mode;
+  document.querySelectorAll('.gv-tab').forEach(b=>b.classList.toggle('active',b.dataset.view===mode));
+  // 更新按钮 title
+  const titles={day:['前一天','后一天'],week:['上一周','下一周']};
+  const t=titles[mode];
+  document.getElementById('ganttPrev').title=t[0];
+  document.getElementById('ganttNext').title=t[1];
+  render();
+}
+
+/* ============================================================
+   RENDER (Booking page)
+   ============================================================ */
+
+/* -- Sidebar -- */
+function renderSidebar(){
+  const el=document.getElementById('sbList');
+  el.innerHTML='';
+  rooms.filter(r=>r.status!=='maintenance').forEach(rm=>{
+    const busy=isBusyNow(rm.id);
+    const div=document.createElement('div');
+    div.className=`room-row${selRoomId===rm.id?' active':''}`;
+    div.innerHTML=`
+      <div class="room-dot" style="background:${rm.color}"></div>
+      <div class="room-info">
+        <div class="room-rname">${escHtml(rm.name)}</div>
+        <div class="room-rcap">≤${rm.capacity}人 · ${rm.location}</div>
+        ${rm.equipment ? `<div class="eq-tags" style="margin-top:2px">${equipTags(rm.equipment)}</div>` : ''}
+        ${rm.remark ? `<div class="room-rremark">${escHtml(rm.remark)}</div>` : ''}
+      </div>
+      <span class="status-tag ${busy?'tag-busy':'tag-free'}">${busy?'占用':'空闲'}</span>
+    `;
+    div.onclick=()=>{ selRoomId=rm.id; document.getElementById('fRoom').value=rm.id; renderSidebar(); };
+    el.appendChild(div);
+  });
+}
+
+/* -- Stats (Booking page sidebar) -- */
+function renderBookingStats(){
+  const todayBk=bookings.filter(b=>sameDay(b.startTime,new Date()));
+  const busyNow=rooms.filter(r=>isBusyNow(r.id)).length;
+  document.getElementById('statsBar').innerHTML=`
+    <div class="scard"><div class="sval">${rooms.length}</div><div class="slabel">会议室</div></div>
+    <div class="scard"><div class="sval" style="color:var(--ok)">${busyNow}</div><div class="slabel">使用中</div></div>
+    <div class="scard"><div class="sval" style="color:var(--warn)">${todayBk.length}</div><div class="slabel">今日预约</div></div>
+  `;
+}
+
+/* -- Form Select -- */
+function renderSelect(){
+  const sel=document.getElementById('fRoom');
+  const prev=sel.value;
+  sel.innerHTML='<option value="">— 请选择会议室 —</option>';
+  rooms.filter(r=>r.status!=='maintenance').forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.id;
+    const eqArr = parseEquipment(r.equipment);
+    const eqStr = eqArr.length ? ' · ' + eqArr.join('/') : '';
+    o.textContent=`${r.name}（${r.capacity}人 · ${r.location}${eqStr}）`;
+    sel.appendChild(o);
+  });
+  sel.value=prev||selRoomId||'';
+}
+
+/* -- Gantt -- */
+const G_S=7, G_E=22;
+const GHOURS=Array.from({length:G_E-G_S},(_,i)=>G_S+i);
+
+function getNowPct(){
+  const n=new Date();
+  const m=(n.getHours()-G_S)*60+n.getMinutes();
+  const tot=(G_E-G_S)*60;
+  return Math.max(0,Math.min(100,(m/tot)*100));
+}
+
+function getWeekRange(d){
+  const day=d.getDay()||7; // 周一=1
+  const mon=new Date(d); mon.setDate(d.getDate()-day+1); mon.setHours(0,0,0,0);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+  return {start:mon,end:sun,days:7};
+}
+
+
+
+
+function renderGantt(){
+  const wrap=document.getElementById('ganttWrap');
+  const titleEl=document.getElementById('dateLbl');
+  const bkTitleEl=document.getElementById('bkListTitle');
+
+  if(ganttViewMode==='day'){
+    titleEl.textContent=fmtD(chartDate);
+    bkTitleEl.textContent='当日预约';
+    renderGanttDay(wrap);
+  } else {
+    const wr=getWeekRange(chartDate);
+    titleEl.textContent=`${wr.start.getMonth()+1}/${wr.start.getDate()} — ${wr.end.getMonth()+1}/${wr.end.getDate()}`;
+    bkTitleEl.textContent='本周预约';
+    renderGanttWeek(wrap,wr);
+  }
+}
+
+/* -- Gantt: Day view -- */
+function renderGanttDay(wrap){
+  const isToday=fmtD(chartDate)===fmtD(new Date());
+  const dayBk=bookings.filter(b=>sameDay(b.startTime,chartDate));
+  const tot=G_E-G_S;
+  const totMin=tot*60;
+  let hourLabels=GHOURS.map(h=>`<div class="g-hl" style="left:${((h-G_S)/tot*100).toFixed(2)}%">${h}:00</div>`).join('');
+  let html=`<div class="gantt-hd"><div class="gantt-room-th">会议室</div><div class="gantt-time-hd">${hourLabels}</div></div><div class="gantt-body">`;
+  rooms.forEach(rm=>{
+    const rbs=dayBk.filter(b=>b.roomId===rm.id);
+    const grids=GHOURS.map((_,i)=>`<div class="g-grid" style="left:${((i/tot)*100).toFixed(2)}%"></div>`).join('');
+    const nowLine=isToday?`<div class="g-now" style="left:${getNowPct().toFixed(2)}%"></div>`:'';
+    const blocks=rbs.map(b=>{
+      const bs=new Date(b.startTime),be=new Date(b.endTime);
+      const bsM=(bs.getHours()-G_S)*60+bs.getMinutes();
+      const beM=(be.getHours()-G_S)*60+be.getMinutes();
+      const left=Math.max(0,(bsM/totMin)*100);
+      const width=Math.min(100-left,((beM-bsM)/totMin)*100);
+      const lbl=`${pad(bs.getHours())}:${pad(bs.getMinutes())} ${escHtml(b.person)}: ${escHtml(b.reason)}`;
+      return `<div class="g-blk" style="left:${left.toFixed(2)}%;width:${Math.max(width,1.2).toFixed(2)}%;background:${rm.color}" onclick="openDetail('${b.id}')" title="${escAttr(lbl)}">${lbl}</div>`;
+    }).join('');
+    html+=`<div class="gantt-row"><div class="g-label"><div class="g-rn" title="${escAttr(rm.name)}">${escHtml(rm.name)}</div><div class="g-rc">≤${rm.capacity}人${rm.equipment ? ' ' + equipIcons(rm.equipment) : ''}</div></div><div class="g-tl">${grids}${nowLine}${blocks}</div></div>`;
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+/* -- Gantt: Week view -- */
+function renderGanttWeek(wrap,wr){
+  const weekBk=bookings.filter(b=>{const s=new Date(b.startTime);return s>=wr.start&&s<=wr.end;});
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(wr.start);d.setDate(d.getDate()+i);
+    days.push(d);
+  }
+  const weekNames=['一','二','三','四','五','六','日'];
+  const todayStr=fmtD(new Date());
+  let dayHeaders=days.map((d,i)=>{
+    const isT=fmtD(d)===todayStr;
+    return `<div class="gw-day-hd${isT?' gw-today-hd':''}" style="flex:1"><div class="gw-day-name">周${weekNames[i]}</div><div class="gw-day-num">${d.getDate()}</div></div>`;
+  }).join('');
+  let html=`<div class="gantt-hd gw-hd"><div class="gantt-room-th">会议室</div><div class="gw-days-hd">${dayHeaders}</div></div><div class="gantt-body">`;
+  rooms.forEach(rm=>{
+    const rbs=weekBk.filter(b=>b.roomId===rm.id);
+    let cells='';
+    days.forEach(d=>{
+      const isT=fmtD(d)===todayStr;
+      const dayBks=rbs.filter(b=>sameDay(b.startTime,d)).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));
+      const isBusy=dayBks.length>0;
+      cells+=`<div class="gw-cell${isT?' gw-today-cell':''}">`;
+      if(dayBks.length>0){
+        dayBks.slice(0,3).forEach(b=>{
+          const bs=new Date(b.startTime);
+          const lbl=`${pad(bs.getHours())}:${pad(bs.getMinutes())} ${b.person}`;
+          cells+=`<div class="gw-blk" style="background:${rm.color}" onclick="openDetail('${b.id}')" title="${lbl}: ${b.reason}">${lbl}</div>`;
+        });
+        if(dayBks.length>3) cells+=`<div class="gw-more">+${dayBks.length-3}条</div>`;
+      }
+      cells+='</div>';
+    });
+    html+=`<div class="gantt-row gw-row"><div class="g-label"><div class="g-rn" title="${escAttr(rm.name)}">${escHtml(rm.name)}</div><div class="g-rc">≤${rm.capacity}人${rm.equipment ? ' ' + equipIcons(rm.equipment) : ''}</div></div><div class="gw-cells">${cells}</div></div>`;
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+
+/* -- Booking List -- */
+function renderBkList(){
+  let filteredBk;
+  if(ganttViewMode==='day'){
+    filteredBk=bookings.filter(b=>sameDay(b.startTime,chartDate));
+  } else {
+    const wr=getWeekRange(chartDate);
+    filteredBk=bookings.filter(b=>{const s=new Date(b.startTime);return s>=wr.start&&s<=wr.end;});
+  }
+  filteredBk.sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));
+  document.getElementById('bkBadge').textContent=filteredBk.length;
+  const el=document.getElementById('bkItems');
+  if(!filteredBk.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ic">📭</div><p>暂无预约记录</p></div>`;
+    return;
+  }
+  el.innerHTML=filteredBk.map(b=>{
+    const rm=roomById(b.roomId);
+    const st=new Date(b.startTime), et=new Date(b.endTime);
+    const ts=`${pad(st.getHours())}:${pad(st.getMinutes())} — ${pad(et.getHours())}:${pad(et.getMinutes())}`;
+    return `
+      <div class="bk-item" style="border-left-color:${rm?.color}" onclick="openDetail('${b.id}')">
+        <div class="bk-dot" style="background:${rm?.color}"></div>
+        <div class="bk-info">
+          <div class="bk-top"><span class="bk-rn">${escHtml(rm?.name||'')}</span><span class="bk-time">🕐 ${ts}</span></div>
+          <div class="bk-sub">👤 ${escHtml(b.person)}${b.department ? ' · 🏢 '+escHtml(b.department) : ''} · ${escHtml(b.reason)}</div>
+        </div>
+        <button class="bk-eye" title="查看详情">👁</button>
+      </div>`;
+  }).join('');
+}
+
+/* -- Master Render (Booking page) -- */
+function render(){
+  renderSidebar();
+  renderBookingStats();
+  renderSelect();
+  renderGantt();
+  renderBkList();
+}
+
+/* ============================================================
+   ADMIN MODULE
+   ============================================================ */
+
+const ADMIN_USER_HASH = '8e7fc3bdfb6d4b9902f22502d1d58646c8371301338d15c39fdd98b234ac864a';
+const ADMIN_PASS_HASH = 'e9104f40224de42b2d9288272dac2eeab1eec806569dc84bfcfa2fbba09af5b3';
+const SK_ADMIN_SESSION = 'mrb_admin_session_v3';
+const ADMIN_SESSION_TTL = 4 * 3600 * 1000; // 4 hours
+
+let isAdmin = false;
+let adminSessionExpiry = 0;
+
+/* ---- Admin Session ---- */
+function checkAdminSession(){
+  try {
+    const data = JSON.parse(localStorage.getItem(SK_ADMIN_SESSION));
+    if(data && data.ts && Date.now() - data.ts < ADMIN_SESSION_TTL){
+      isAdmin = true;
+      adminSessionExpiry = data.ts + ADMIN_SESSION_TTL;
+      return;
+    }
+  } catch {}
+  isAdmin = false;
+  localStorage.removeItem(SK_ADMIN_SESSION);
+}
+
+function setAdminSession(){
+  isAdmin = true;
+  adminSessionExpiry = Date.now() + ADMIN_SESSION_TTL;
+  localStorage.setItem(SK_ADMIN_SESSION, JSON.stringify({ts: Date.now()}));
+}
+
+function clearAdminSession(){
+  isAdmin = false;
+  adminSessionExpiry = 0;
+  localStorage.removeItem(SK_ADMIN_SESSION);
+}
+
+/* ---- Admin Login Modal ---- */
+function openAdminLogin(){
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('adminLoginOv').classList.add('on');
+  setTimeout(()=>document.getElementById('loginUser').focus(), 100);
+}
+function closeAdminLogin(){ document.getElementById('adminLoginOv').classList.remove('on'); }
+document.getElementById('adminLoginOv').addEventListener('click', e => { if(e.target.id==='adminLoginOv') closeAdminLogin(); });
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function doAdminLogin(){
+  const user = document.getElementById('loginUser').value.trim();
+  const pwd = document.getElementById('loginPwd').value;
+  if(!user || !pwd){
+    document.getElementById('loginErr').textContent = '请输入账号和密码';
+    return;
+  }
+  sha256(user).then(uh => sha256(pwd).then(ph => {
+    if(uh === ADMIN_USER_HASH && ph === ADMIN_PASS_HASH){
+      setAdminSession();
+      closeAdminLogin();
+      toast('✅ 管理员登录成功', 'ok');
+      updateAdminUI();
+      // Auto-switch to admin tab
+      switchTab('admin');
+    } else {
+      document.getElementById('loginErr').textContent = '账号或密码错误';
+      document.getElementById('loginPwd').value = '';
+      document.getElementById('loginPwd').focus();
+    }
+  }));
+}
+
+function adminLogout(){
+  clearAdminSession();
+  updateAdminUI();
+  switchTab('dashboard');
+  toast('已退出管理模式', 'warn');
+}
+
+/* ---- Admin UI Updates ---- */
+function updateAdminUI(){
+  const tab = document.getElementById('adminTab');
+  if(isAdmin){
+    tab.style.display = '';
+  } else {
+    tab.style.display = 'none';
+    // If on admin page, switch away
+    if(currentTab === 'admin'){
+      switchTab('dashboard');
+    }
+  }
+}
+
+/* ---- Room Config List ---- */
+function renderRoomConfigList(){
+  const el = document.getElementById('roomConfigList');
+  if(!rooms.length){
+    el.innerHTML = '<div class="empty"><div class="empty-ic">📭</div><p>暂无会议室，点击上方按钮新增</p></div>';
+    return;
+  }
+  el.innerHTML = rooms.map((rm, idx) => {
+    const bkCount = bookings.filter(b => b.roomId === rm.id).length;
+    const statusClass = rm.status === 'maintenance' ? 'maintenance' : 'active';
+    const statusText = rm.status === 'maintenance' ? '🔧 维护中' : '✅ 启用';
+    return `
+      <div class="room-config-card" draggable="false" data-room-id="${rm.id}" data-idx="${idx}">
+        <div class="rcc-drag" title="拖拽排序">⠿</div>
+        <div class="rcc-color" style="background:${rm.color}">${escHtml(rm.name.charAt(0))}</div>
+        <div class="rcc-info">
+          <div class="rcc-name">${escHtml(rm.name)}</div>
+          <div class="rcc-meta">📍 ${escHtml(rm.location)} · 👥 ${rm.capacity}人 · 📋 ${bkCount}条预约</div>
+          ${rm.equipment ? `<div class="eq-tags" style="margin-top:3px">${equipTags(rm.equipment)}</div>` : ''}
+          ${rm.remark ? `<div class="rcc-remark">💬 ${escHtml(rm.remark)}</div>` : ''}
+        </div>
+        <span class="rcc-status ${statusClass}">${statusText}</span>
+        <div class="rcc-btns">
+          <button class="btn-icon" title="编辑" onclick="openRoomModal('${rm.id}')">✏️</button>
+          <button class="btn-icon del" title="删除" onclick="openRoomDel('${rm.id}')">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+  initDragSort();
+}
+
+/* ---- Drag Sort for Room Cards ---- */
+let _dragSrcId = null;
+
+function initDragSort(){
+  const container = document.getElementById('roomConfigList');
+  const cards = container.querySelectorAll('.room-config-card');
+
+  cards.forEach(card => {
+    // 只允许从拖拽手柄开始拖拽
+    const handle = card.querySelector('.rcc-drag');
+    if(!handle) return;
+
+    handle.addEventListener('mousedown', () => { card.setAttribute('draggable', 'true'); });
+    handle.addEventListener('touchstart', () => { card.setAttribute('draggable', 'true'); }, {passive: true});
+    document.addEventListener('mouseup', () => { card.setAttribute('draggable', 'false'); }, {once: true});
+    document.addEventListener('touchend', () => { card.setAttribute('draggable', 'false'); }, {once: true});
+
+    card.addEventListener('dragstart', e => {
+      _dragSrcId = card.dataset.roomId;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => { card.style.opacity = '0.4'; }, 0);
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      card.style.opacity = '';
+      _dragSrcId = null;
+      container.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    });
+
+    card.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if(card.dataset.roomId !== _dragSrcId){
+        card.classList.add('drag-over');
+      }
+    });
+
+    card.addEventListener('dragleave', () => {
+      card.classList.remove('drag-over');
+    });
+
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const srcId = _dragSrcId;
+      const targetId = card.dataset.roomId;
+      if(!srcId || srcId === targetId) return;
+
+      const srcIdx = rooms.findIndex(r => r.id === srcId);
+      const targetIdx = rooms.findIndex(r => r.id === targetId);
+      if(srcIdx === -1 || targetIdx === -1) return;
+
+      const [moved] = rooms.splice(srcIdx, 1);
+      rooms.splice(targetIdx, 0, moved);
+
+      saveRoomSort();
+      renderRoomConfigList();
+      toast('✅ 会议室顺序已更新', 'ok');
+    });
+  });
+}
+
+async function saveRoomSort(){
+  rooms.forEach((r, i) => { r.sortOrder = i; });
+  localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+  if(!supabaseReady) return;
+  try {
+    const results = await Promise.allSettled(
+      rooms.map((r, i) => supabase.from('huiyishi').update({sort_order: i}).eq('id', r.id))
+    );
+    const failed = results.filter(r => r.status === 'rejected');
+    if(failed.length > 0){
+      console.warn('saveRoomSort: 部分/全部更新失败（可能缺少 sort_order 列）');
+      toast('⚠️ 排序保存到云端失败，请执行 ALTER TABLE 添加 sort_order 列', 'warn');
+    }
+  } catch(e){ console.warn('saveRoomSort error:', e); }
+}
+
+/* ---- Room Edit Modal ---- */
+let editRoomId = null;
+let editRoomColor = '#1677ff';
+let editRoomStatus = 'active';
+let editRoomEquip = [];
+
+function openRoomModal(roomId){
+  if(!isAdmin) return;
+  editRoomId = roomId;
+  const rm = roomId ? roomById(roomId) : null;
+
+  document.getElementById('roomEditTitle').textContent = rm ? '✏️ 编辑会议室' : '➕ 新增会议室';
+  document.getElementById('rfName').value = rm ? rm.name : '';
+  document.getElementById('rfCap').value = rm ? rm.capacity : '';
+  document.getElementById('rfLoc').value = rm ? rm.location : '';
+  document.getElementById('rfRemark').value = rm ? (rm.remark || '') : '';
+  editRoomColor = rm ? rm.color : COLORS[Math.floor(Math.random() * COLORS.length)];
+  editRoomStatus = rm ? (rm.status || 'active') : 'active';
+  editRoomEquip = rm ? parseEquipment(rm.equipment) : [];
+
+  renderColorOptions();
+  updateStatusToggle();
+  renderEquipGrid();
+
+  document.getElementById('roomEditOv').classList.add('on');
+  setTimeout(()=>document.getElementById('rfName').focus(), 100);
+}
+
+function closeRoomModal(){ document.getElementById('roomEditOv').classList.remove('on'); }
+document.getElementById('roomEditOv').addEventListener('click', e => { if(e.target.id==='roomEditOv') closeRoomModal(); });
+
+function renderColorOptions(){
+  const el = document.getElementById('colorOpts');
+  el.innerHTML = COLORS.map(c => `
+    <div class="color-opt${c===editRoomColor?' sel':''}" style="background:${c}" onclick="selColor('${c}')">
+      ${c===editRoomColor?'✓':''}
+    </div>`).join('');
+}
+
+function selColor(c){ editRoomColor = c; renderColorOptions(); }
+function selStatus(s){ editRoomStatus = s; updateStatusToggle(); }
+
+function updateStatusToggle(){
+  document.querySelectorAll('#statusToggle .status-opt').forEach(el => {
+    el.classList.toggle('sel', el.dataset.status === editRoomStatus);
+  });
+}
+
+function renderEquipGrid(){
+  const el = document.getElementById('rfEquip');
+  if(!el) return;
+  el.innerHTML = EQUIPMENT_PRESETS.map(eq => {
+    const isSelected = editRoomEquip.includes(eq.name);
+    return `<div class="eq-item${isSelected?' selected':''}" onclick="toggleEquipEdit('${eq.name}')">
+      <span class="eq-ic">${eq.icon}</span>
+      <span class="eq-name">${eq.name}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleEquipEdit(name){
+  const idx = editRoomEquip.indexOf(name);
+  if(idx >= 0) editRoomEquip.splice(idx, 1);
+  else editRoomEquip.push(name);
+  renderEquipGrid();
+}
+
+function saveRoomConfig(){
+  const name = document.getElementById('rfName').value.trim();
+  const cap = parseInt(document.getElementById('rfCap').value);
+  const loc = document.getElementById('rfLoc').value.trim();
+  const remark = document.getElementById('rfRemark').value.trim();
+
+  if(!name) return toast('请输入会议室名称', 'warn');
+  if(!cap || cap < 1) return toast('请输入有效的容纳人数', 'warn');
+  if(!loc) return toast('请输入会议室位置', 'warn');
+
+  const dup = rooms.find(r => r.name === name && r.id !== editRoomId);
+  if(dup) return toast('已存在同名会议室', 'warn');
+
+  const equipStr = JSON.stringify(editRoomEquip);
+
+  if(editRoomId){
+    const rm = roomById(editRoomId);
+    if(rm){
+      rm.name = name;
+      rm.capacity = cap;
+      rm.location = loc;
+      rm.remark = remark;
+      rm.color = editRoomColor;
+      rm.status = editRoomStatus;
+      rm.equipment = equipStr;
+      cloudUpsertRoom(rm);
+      toast(`会议室"${name}"已更新`, 'ok');
+    }
+  } else {
+    const newRoom = {
+      id: 'r' + Date.now().toString(36),
+      name, capacity: cap, location: loc, remark,
+      color: editRoomColor,
+      status: editRoomStatus,
+      equipment: equipStr
+    };
+    rooms.push(newRoom);
+    cloudUpsertRoom(newRoom);
+    toast(`会议室"${name}"已添加`, 'ok');
+  }
+
+  saveRooms();
+  closeRoomModal();
+  renderRoomConfigList();
+}
+
+/* ---- Room Delete ---- */
+let delRoomTarget = null;
+
+function openRoomDel(roomId){
+  if(!isAdmin) return;
+  const rm = roomById(roomId);
+  if(!rm) return;
+  delRoomTarget = roomId;
+  document.getElementById('delRoomName').textContent = rm.name;
+
+  const bkCount = bookings.filter(b => b.roomId === roomId).length;
+  document.getElementById('delRoomWarn').textContent = bkCount > 0
+    ? `⚠ 该会议室有 ${bkCount} 条预约记录，删除后相关预约将变为"未知会议室"`
+    : '';
+
+  document.getElementById('roomDelOv').classList.add('on');
+}
+
+function closeRoomDel(){ document.getElementById('roomDelOv').classList.remove('on'); delRoomTarget = null; }
+document.getElementById('roomDelOv').addEventListener('click', e => { if(e.target.id==='roomDelOv') closeRoomDel(); });
+
+function confirmDelRoom(){
+  if(!delRoomTarget) return;
+  const rm = roomById(delRoomTarget);
+  const name = rm ? rm.name : '';
+  rooms = rooms.filter(r => r.id !== delRoomTarget);
+  cloudDeleteRoom(delRoomTarget);
+  saveRooms();
+  closeRoomDel();
+  renderRoomConfigList();
+  toast(`会议室"${name}"已删除`, 'ok');
+}
+
+/* ============================================================
+   SEED DEMO DATA
+   ============================================================ */
+function seedDemo(){
+  if(bookings.length>0) return;
+  const d=fmtD(new Date());
+  const mk=(rid,s,e,p,r)=>({
+    id:uid(), roomId:rid,
+    startTime:new Date(`${d}T${s}:00`).toISOString(),
+    endTime:new Date(`${d}T${e}:00`).toISOString(),
+    person:p, reason:r, createdAt:new Date().toISOString()
+  });
+  bookings=[
+    mk('r1','09:00','10:30','李明','季度总结会议'),
+    mk('r1','14:00','15:30','王芳','产品评审'),
+    mk('r2','10:00','12:00','赵刚','全员大会'),
+    mk('r3','11:00','11:30','陈丽','客户洽谈'),
+    mk('r3','15:00','16:00','孙伟','项目对接'),
+    mk('r4','09:30','11:00','周红','技术分享'),
+    mk('r5','13:30','17:00','吴飞','新员工培训'),
+  ];
+  saveBkgs();
+}
+
+/* ============================================================
+   FILE UPLOAD & SMART RECOGNITION
+   ============================================================ */
+
+let uploadParsed = null;
+
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+
+fileInput.addEventListener('change', e => {
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+  e.target.value = '';
+});
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+async function handleFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  toast('正在识别文件...','warn');
+  try {
+    let parsed;
+    if(['png','jpg','jpeg','bmp','webp'].includes(ext)){
+      const text = await ocrImage(file);
+      if(!text || text.trim().length < 4){
+        toast('图片文字识别失败，请确保图片清晰','err');
+        showInlineResult('err','图片识别失败，未提取到有效文字');
+        return;
+      }
+      parsed = extractFromText(text, file);
+      parsed._rawText = text;
+      parsed._imageUrl = URL.createObjectURL(file);
+    } else if(['txt','csv'].includes(ext)){
+      const text = await file.text();
+      parsed = extractFromText(text, file);
+      parsed._rawText = text;
+    } else if(['xlsx','xls'].includes(ext)){
+      const text = await parseExcel(file);
+      parsed = extractFromText(text, file);
+      parsed._rawText = text;
+    } else {
+      toast('不支持的文件格式','err'); return;
+    }
+    uploadParsed = parsed;
+    if(parsed.roomId && parsed.startTime && parsed.endTime && parsed.reason){
+      showUploadModal(parsed);
+    } else {
+      fillFormFromParsed(parsed);
+      const missing = [];
+      if(!parsed.roomId) missing.push('会议室');
+      if(!parsed.startTime || !parsed.endTime) missing.push('时间');
+      if(!parsed.reason) missing.push('事由');
+      toast(`部分识别成功，请补全：${missing.join('、')}`,'warn');
+      showInlineResult('warn',`已自动填充，请补全：${missing.join('、')}`);
+    }
+  } catch(err){
+    console.error('File parse error:', err);
+    toast('文件解析出错: '+err.message,'err');
+    showInlineResult('err','文件解析失败：'+err.message);
+  }
+}
+
+/* ---- OCR ---- */
+async function ocrImage(file){
+  try { return await browserOcr(file); }
+  catch(e){ throw new Error('OCR识别失败: '+e.message); }
+}
+
+async function browserOcr(file){
+  if(!window.Tesseract){
+    await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+  }
+  const result = await Tesseract.recognize(file, 'chi_sim+eng', {});
+  return result.data.text;
+}
+
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    if(document.querySelector(`script[src="${src}"]`)){
+      const check = setInterval(() => { if(window.Tesseract){clearInterval(check);resolve();} },100);
+      setTimeout(()=>{clearInterval(check);reject(new Error('Script load timeout'));},30000);
+      return;
+    }
+    const s = document.createElement('script'); s.src = src;
+    s.onload = resolve; s.onerror = () => reject(new Error('Failed to load: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+/* ---- Excel ---- */
+async function parseExcel(file){
+  if(!window.XLSX){
+    await loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+  }
+  const data = await file.arrayBuffer();
+  const wb = XLSX.read(data, {type:'array'});
+  const texts = [];
+  wb.SheetNames.forEach(name => {
+    const ws = wb.Sheets[name];
+    XLSX.utils.sheet_to_json(ws,{header:1}).forEach(row => {
+      texts.push(row.filter(c=>c!=null).join(' '));
+    });
+  });
+  return texts.join('\n');
+}
+
+/* ---- Smart Text Extraction ---- */
+function extractFromText(text, file){
+  const result = {roomId:'',startTime:'',endTime:'',person:currentUser,reason:'',_fileName:file.name};
+  const lines = text.split(/\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  const full = text.replace(/\s+/g,' ');
+
+  // Room
+  rooms.forEach(rm => { if(full.includes(rm.name)) result.roomId = rm.id; });
+  if(!result.roomId){
+    const m = full.match(/(?:会议室|房间|厅|室)\s*[：:]\s*(\S+)/);
+    if(m){ const f = rooms.find(r=>r.name.includes(m[1])); if(f) result.roomId = f.id; }
+  }
+
+  // Time
+  const tp = [
+    /(\d{4})[年\-\/](\d{1,2})[月\-\/](\d{1,2})[日]?\s*(\d{1,2})[：:](\d{2})\s*[-—~至到]+\s*(\d{1,2})[：:](\d{2})/,
+    /(\d{1,2})[：:](\d{2})\s*[-—~至到]+\s*(\d{1,2})[：:](\d{2})/,
+  ];
+  const today = new Date();
+  for(const p of tp){
+    const m = full.match(p);
+    if(m){
+      if(m.length >= 8){
+        const [_,y,mo,d,sh,sm,eh,em] = m;
+        result.startTime = `${y}-${pad(mo)}-${pad(d)}T${pad(sh)}:${sm}`;
+        result.endTime = `${y}-${pad(mo)}-${pad(d)}T${pad(eh)}:${em}`;
+      } else {
+        const [_,sh,sm,eh,em] = m;
+        result.startTime = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}T${pad(sh)}:${sm}`;
+        result.endTime = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}T${pad(eh)}:${em}`;
+      }
+      break;
+    }
+  }
+
+  // Person
+  const pp = [
+    /(?:组织者|预约人|申请人|发起人|负责人|参会人|主持人)[：:]\s*(\S{1,10})/,
+    /(?:主讲|分享人|报告人)[：:]\s*(\S{1,10})/,
+  ];
+  for(const p of pp){
+    const m = full.match(p);
+    if(m){ result.person = m[1].replace(/[，,。.；;]/g,''); break; }
+  }
+
+  // Reason
+  const rp = [
+    /(?:会议主题|议题|事由|主题|内容|题目)[：:]\s*(.+?)(?:\n|$)/,
+    /(?:关于|主题为|议题为)\s*(.+?)(?:\n|会议|时间|地点|$)/,
+    /(.{2,30}(?:会议|研讨|评审|培训|汇报|讨论|交流|洽谈|对接|总结|分享))\s*(?:\n|时间|地点|$)/,
+  ];
+  for(const p of rp){
+    const m = full.match(p);
+    if(m){ result.reason = m[1].trim().replace(/[，,。.；;\s]+$/,''); break; }
+  }
+  if(!result.reason && lines.length > 0){
+    const first = lines.find(l=>l.length>2&&l.length<30);
+    if(first && !/^\d/.test(first)) result.reason = first.replace(/^[#\s]+/,'').substring(0,30);
+  }
+  return result;
+}
+
+/* ---- UI Helpers ---- */
+function showInlineResult(type, msg){
+  const el = document.getElementById('uploadResult');
+  el.innerHTML = `<div class="ur-${type}">${msg}</div>`;
+  setTimeout(()=>{el.innerHTML='';},6000);
+}
+
+function showUploadModal(parsed){
+  const rm = parsed.roomId ? roomById(parsed.roomId) : null;
+  const preview = document.getElementById('uploadPreview');
+  let ph = '';
+  if(parsed._imageUrl) ph = `<img class="ur-img-preview" src="${parsed._imageUrl}" alt="preview"/>`;
+  else if(parsed._rawText) ph = `<div style="background:var(--bg);padding:10px;border-radius:var(--rs);font-size:11px;color:var(--tx2);max-height:80px;overflow:hidden;white-space:pre-wrap">${escHtml(parsed._rawText.substring(0,200))}</div>`;
+  preview.innerHTML = ph;
+
+  const resultEl = document.getElementById('uploadModalResult');
+  resultEl.innerHTML = `
+    <div class="ur-row"><span class="ur-l">会议室</span><span class="ur-v">${rm?escHtml(rm.name)+' ('+escHtml(rm.location)+')':'❌ 未识别'}</span></div>
+    <div class="ur-row"><span class="ur-l">开始时间</span><span class="ur-v">${parsed.startTime?fmtDT(parsed.startTime):'❌ 未识别'}</span></div>
+    <div class="ur-row"><span class="ur-l">结束时间</span><span class="ur-v">${parsed.endTime?fmtDT(parsed.endTime):'❌ 未识别'}</span></div>
+    <div class="ur-row"><span class="ur-l">预约人</span><span class="ur-v">${escHtml(parsed.person)}</span></div>
+    <div class="ur-row"><span class="ur-l">会议事由</span><span class="ur-v">${parsed.reason?escHtml(parsed.reason):'❌ 未识别'}</span></div>`;
+
+  const btn = document.getElementById('uploadConfirmBtn');
+  if(parsed.roomId && parsed.startTime && parsed.endTime && parsed.reason){
+    btn.textContent = '✅ 确认预约'; btn.style.opacity='1'; btn.disabled=false;
+  } else {
+    resultEl.innerHTML += `<div class="ur-warn">⚠ 部分信息缺失，确认后请在表单中补全</div>`;
+    btn.textContent = '填入表单'; btn.style.opacity='0.7'; btn.disabled=false;
+  }
+  document.getElementById('uploadOv').classList.add('on');
+}
+
+function closeUploadModal(){
+  document.getElementById('uploadOv').classList.remove('on');
+  if(uploadParsed && uploadParsed._imageUrl) URL.revokeObjectURL(uploadParsed._imageUrl);
+}
+document.getElementById('uploadOv').addEventListener('click', e => { if(e.target.id==='uploadOv') closeUploadModal(); });
+
+function confirmUploadBooking(){
+  const p = uploadParsed; if(!p) return closeUploadModal();
+  fillFormFromParsed(p);
+  if(p.roomId && p.startTime && p.endTime && p.reason){
+    const sISO = new Date(p.startTime).toISOString();
+    const eISO = new Date(p.endTime).toISOString();
+    if(new Date(eISO)<=new Date(sISO)){
+      closeUploadModal(); return toast('识别时间有误：结束时间须晚于开始时间','err');
+    }
+    const cf = checkConflict(p.roomId, sISO, eISO);
+    if(cf){
+      const rm = roomById(p.roomId); closeUploadModal();
+      return toast(`❌ 时间冲突！${rm?.name} ${fmtDT(cf.startTime)}~${fmtDT(cf.endTime)} 已被"${cf.person}"预约`,'err');
+    }
+    bookings.push({id:uid(),roomId:p.roomId,startTime:sISO,endTime:eISO,person:p.person||currentUser,department:p.department||'',reason:p.reason,createdAt:new Date().toISOString()});
+    const uploadedBk = bookings[bookings.length-1];
+    saveBkgs(); cloudInsertBooking(uploadedBk); sendBookingNotify(uploadedBk, true); chartDate = new Date(sISO); closeUploadModal();
+    toast(`✅ 识别预约成功！${roomById(p.roomId)?.name}`,'ok');
+    showInlineResult('ok',`已预约：${roomById(p.roomId)?.name} ${fmtDT(sISO)}~${fmtDT(eISO)}`);
+    render();
+  } else {
+    closeUploadModal(); toast('已填入表单，请补全后提交','warn');
+  }
+}
+
+function fillFormFromParsed(p){
+  if(p.roomId){ document.getElementById('fRoom').value=p.roomId; selRoomId=p.roomId; }
+  if(p.startTime){ const d=new Date(p.startTime); document.getElementById('fStart').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  if(p.endTime){ const d=new Date(p.endTime); document.getElementById('fEnd').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  if(p.person) document.getElementById('fPerson').value=p.person;
+  if(p.reason) document.getElementById('fReason').value=p.reason;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  // 注册 setup 按钮的后续回调
+  window._afterSetup = function(client){
+    supabase = client;
+    supabaseReady = true;
+    updateCloudStatus('online');
+    document.getElementById('reconfigBtn').style.display = '';
+    document.getElementById('refreshBtn').style.display = '';
+    // 先恢复用户名，再加载云端数据（含 hiddenIds 同步）
+    try{ var savedUser = localStorage.getItem(SK_USER); if(savedUser) currentUser = savedUser; } catch(e){}
+    loadAllFromCloud().then(function(){
+      setTimeout(function(){
+        document.getElementById('setupOv').style.display = 'none';
+        startRealtime();
+        initUI();
+      }, 500);
+    });
+  };
+  window._afterSkip = function(){
+    supabaseReady = false;
+    updateCloudStatus('offline');
+    loadAllLocal();
+    initUI();
+  };
+
+  // Show setup if no Supabase config
+  if(!showSetupIfNeeded()){
+    // Setup screen is shown, wait for user to configure
+    return;
+  }
+
+  // Has config, connect to Supabase
+  var cfg = loadSupabaseConfig();
+  initSupabase(cfg.url, cfg.key).then(function(){
+    return loadAllFromCloud();
+  }).then(function(){
+    startRealtime();
+    initUI();
+  }).catch(function(e){
+    console.warn('Supabase init failed, using local mode:', e);
+    updateCloudStatus('offline');
+    loadAllLocal();
+    initUI();
+  });
+}
+
+function initUI(){
+  seedDemo();
+  initDeptSelect();
+  initFormDefaults();
+  // 确保从 localStorage 恢复用户名
+  try{ var savedUser = localStorage.getItem(SK_USER); if(savedUser) currentUser = savedUser; } catch(e){ console.warn('read user error:', e); }
+  if(!currentUser){
+    // 首次使用，弹出设置用户名对话框
+    document.getElementById('userPanelTitle').textContent = '👋 欢迎使用应急通信局会议预约系统';
+    document.getElementById('userPanelHint').textContent = '首次使用，请先设置您的姓名。姓名将保存在本机浏览器中，下次打开自动加载。';
+    document.getElementById('userPanelCancel').style.display = 'none';
+    document.getElementById('userPanel').classList.add('on');
+    setTimeout(function(){ document.getElementById('uName').focus(); }, 100);
+    return;
+  }
+  document.getElementById('navName').textContent=currentUser;
+  document.getElementById('navAvatar').textContent=currentUser.charAt(0);
+  checkAdminSession();
+  updateAdminUI();
+  renderDashboard();
+  startGanttTimer();
+  startAutoSync();
+  requestNotifyPermission();
+  startReminder();
+}
+
+function startGanttTimer(){
+  if(_ganttTimer) return; // 防止重复创建
+  _ganttTimer = setInterval(()=>{
+    if(currentTab === 'booking') renderGantt();
+    else if(currentTab === 'dashboard') renderDashTimeline();
+  }, 60000);
+}
+
+/* ---- Auto Cloud Sync (every 60s) ---- */
+let _autoSyncTimer = null;
+function startAutoSync(){
+  if(_autoSyncTimer) return;
+  _autoSyncTimer = setInterval(async ()=>{
+    if(!supabaseReady) return;
+    try {
+      const { data: roomData, error: roomErr } = await supabase.from('huiyishi').select('*').order('sort_order', {ascending: true}).order('created_at', {ascending: true});
+      const { data: bkData, error: bkErr } = await supabase.from('bookings').select('*').order('created_at', {ascending: false});
+      if(roomErr || bkErr) return;
+      const newRooms = roomData ? roomData.map(r => ({id: r.id, name: r.name, capacity: r.capacity, color: r.color, location: r.location, status: r.status, remark: r.remark || ''})) : rooms;
+      newRooms.forEach(r => { if(!r.status) r.status = 'active'; });
+      const newBkgs = (bkData || []).map(b => ({id: b.id, roomId: b.room_id, startTime: b.start_time, endTime: b.end_time, person: b.person, department: b.department||'', reason: b.reason, createdAt: b.created_at}));
+      // 只有数据变化时才刷新页面（同时检测会议室和预约变化）
+      const roomsChanged = JSON.stringify(newRooms.map(r=>r.id).sort()) !== JSON.stringify(rooms.map(r=>r.id).sort());
+      const bkgsChanged = JSON.stringify(newBkgs.map(b=>b.id).sort()) !== JSON.stringify(bookings.map(b=>b.id).sort());
+      if(roomsChanged || bkgsChanged){
+        rooms = newRooms;
+        bookings = newBkgs;
+        localStorage.setItem(SK_BKGS, JSON.stringify(bookings));
+        localStorage.setItem(SK_ROOMS, JSON.stringify(rooms));
+        await loadHiddenFromCloud();
+        if(currentTab === 'dashboard') renderDashboard();
+        else if(currentTab === 'booking') render();
+        else if(currentTab === 'history') renderHistory();
+        else if(currentTab === 'stats') renderStats();
+        else if(currentTab === 'admin') renderRoomConfigList();
+      }
+    } catch(e){ console.warn('autoSync error:', e); }
+  }, 60000);
+}
+
+// 初始化
+try { init(); } catch(e) { console.error('Init error:', e); }
+</script>
+</body>
+</html>
